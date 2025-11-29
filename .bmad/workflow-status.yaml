@@ -1,0 +1,201 @@
+---
+project: Smart To-Do List with AI Labels
+initialized: 2025-11-29
+status: phase-0-complete
+current_phase: phase-1-planning
+
+# ============================================================================
+# BLOCKER DECISIONS (Must resolve before Phase 2)
+# ============================================================================
+blockers:
+  - id: BLOCKER-001
+    title: AI Model Approach
+    description: Define whether AI will use heuristic rules or ML classifier
+    options:
+      - option_a: Heuristic (keyword + rules) - 3-5 days effort
+      - option_b: Pre-trained classifier (HuggingFace) - 1-2 weeks
+      - option_c: Custom ML model - 3+ weeks + labeled data
+    impact: HIGH - Determines tech stack, timeline, compute resources
+    status: UNRESOLVED
+    owner: null
+    due_date: null
+
+  - id: BLOCKER-002
+    title: Tech Stack Selection
+    description: Choose frontend framework, backend, database, and AI hosting
+    options:
+      - option_a: Frontend-only (React/Vue + IndexedDB) - no backend
+      - option_b: Frontend + Node.js backend + MongoDB - full stack
+      - option_c: Frontend + Python backend + PostgreSQL - ML-friendly
+      - option_d: Firebase/Supabase - managed backend for MVP
+    impact: HIGH - Affects all downstream architecture and development
+    status: UNRESOLVED
+    owner: null
+    due_date: null
+
+  - id: BLOCKER-003
+    title: Sync Strategy (MVP vs Phase 2)
+    description: Decide if cloud sync is MVP or deferred to Phase 2
+    options:
+      - option_a: MVP - Include cloud sync, requires auth & backend
+      - option_b: Phase 2 - Local-only for MVP, sync deferred
+    impact: MEDIUM - Changes success criteria, MVP scope, and timeline
+    status: UNRESOLVED
+    owner: null
+    due_date: null
+
+# ============================================================================
+# DECISION LOG
+# ============================================================================
+decisions: []
+
+# ============================================================================
+# PHASE PROGRESS
+# ============================================================================
+phase_0_complete:
+  analysis:
+    status: COMPLETE
+    date: 2025-11-29
+    deliverables:
+      - proposal.md (input)
+      - brainstorming-session-results-2025-11-29.md
+  brainstorming:
+    status: COMPLETE
+    date: 2025-11-29
+    deliverables:
+      - Feature Priority Matrix (Quick Wins, Big Bets, Fill-ins, Money Pits)
+      - Strategic roadmap (Foundation → Core → Convenience → Future)
+  research: []
+  product_brief:
+    status: PENDING
+    next_action: "Await blocker resolution to create Product Brief"
+
+phase_1_planning:
+  status: NOT_STARTED
+  prd:
+    status: PENDING
+    blocked_by: [BLOCKER-001, BLOCKER-002, BLOCKER-003]
+  ux_design:
+    status: PENDING
+    blocked_by: [BLOCKER-002]
+  validation:
+    status: PENDING
+
+# ============================================================================
+# KEY INSIGHTS FROM BRAINSTORMING
+# ============================================================================
+insights:
+  - essence: "Core value is capturing and viewing tasks clearly"
+  - vision: "Proactive intelligent partner reducing cognitive load"
+  - quick_wins:
+      - Basic CRUD (low effort, high value)
+  - big_bets:
+      - AI-generated labels & priorities (high effort, high value)
+  - fill_ins:
+      - Account & device sync (low effort, medium value)
+  - future:
+      - RPG skill tree, quest logs, task playlists (deferred)
+
+# ============================================================================
+# ACTION ITEMS (Ordered by criticality)
+# ============================================================================
+action_items:
+  - id: ACTION-001
+    priority: CRITICAL
+    title: "Resolve BLOCKER-001: AI Model Approach"
+    description: "Schedule decision meeting. Recommend: Start with heuristic for MVP speed."
+    owner: null
+    due_date: null
+    status: PENDING
+
+  - id: ACTION-002
+    priority: CRITICAL
+    title: "Resolve BLOCKER-002: Tech Stack Selection"
+    description: "Schedule tech spike / architecture discussion. Map effort vs. scalability."
+    owner: null
+    due_date: null
+    status: PENDING
+
+  - id: ACTION-003
+    priority: CRITICAL
+    title: "Resolve BLOCKER-003: Sync Strategy"
+    description: "Clarify MVP scope: Is sync required or Phase 2? Updates success criteria."
+    owner: null
+    due_date: null
+    status: PENDING
+
+  - id: ACTION-004
+    priority: HIGH
+    title: "Create Product Brief"
+    description: "Once blockers resolved, synthesize proposal + brainstorming → formal Product Brief"
+    owner: null
+    due_date: null
+    depends_on: [ACTION-001, ACTION-002, ACTION-003]
+    status: PENDING
+
+  - id: ACTION-005
+    priority: HIGH
+    title: "Create PRD (Product Requirements Document)"
+    description: "Formalize requirements, personas, success metrics, roadmap"
+    owner: pm
+    due_date: null
+    depends_on: [ACTION-004]
+    status: PENDING
+
+  - id: ACTION-006
+    priority: MEDIUM
+    title: "UX Design Specification"
+    description: "Wireframes, user flows, interaction patterns"
+    owner: ux_designer
+    due_date: null
+    depends_on: [ACTION-005]
+    status: PENDING
+
+# ============================================================================
+# TIMELINE ESTIMATE (Subject to blocker resolution)
+# ============================================================================
+timeline:
+  phase_0_analysis_brainstorm: 1_day # COMPLETE
+  blocker_resolution: 3_to_5_days # CRITICAL PATH
+  product_brief: 2_days
+  phase_1_prd_ux: 5_to_7_days
+  phase_2_architecture: 5_days
+  phase_3_sprint_planning: 3_days
+  phase_3_implementation_mvp: 3_to_4_weeks
+  total_mvp_estimate: "6-8 weeks (after blocker resolution)"
+
+# ============================================================================
+# TEAM ROLES REQUIRED
+# ============================================================================
+team:
+  product_manager:
+    status: NEEDED
+    responsibilities: [PRD, feature prioritization, stakeholder alignment]
+  architect:
+    status: NEEDED
+    responsibilities: [tech stack, system design, AI model choice]
+  ux_designer:
+    status: NEEDED
+    responsibilities: [wireframes, user flows, design validation]
+  frontend_developer:
+    status: NEEDED
+    responsibilities: [UI implementation, local data persistence]
+  backend_developer:
+    status: CONDITIONAL
+    note: "Only needed if backend + sync chosen (BLOCKER-002 option_b or option_c)"
+  ai_ml_engineer:
+    status: CONDITIONAL
+    note: "Only needed if ML classifier chosen (BLOCKER-001 option_b or option_c)"
+  qa_tester:
+    status: NEEDED
+    responsibilities: [test design, validation]
+
+# ============================================================================
+# NOTES
+# ============================================================================
+notes: |
+  - Phase 0 (Analysis & Brainstorming) completed successfully.
+  - Three critical blockers identified; resolution needed before Phase 1 can proceed.
+  - Recommend: Heuristic AI + Frontend-only (IndexedDB) + Sync in Phase 2 for fastest MVP.
+  - Brainstorming revealed strong product vision; Feature Priority Matrix provides roadmap.
+  - Next: Schedule blocker resolution meeting with architect + PM.
