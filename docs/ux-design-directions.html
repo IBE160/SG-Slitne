@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>UX Design Directions — Smart To-Do</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body{font-family:Inter,system-ui,Arial,sans-serif;padding:24px;color:#0f1722}
+    h1,h2{margin-top:0}
+    pre{background:#f3f4f6;padding:12px;border-radius:6px}
+    table{border-collapse:collapse;width:100%;margin-bottom:16px}
+    th,td{padding:8px;border:1px solid #e6e6e9;text-align:left}
+  </style>
+</head>
+<body>
+  <h1>Design Directions & Developer Handoff</h1>
+  <p>This file contains component-level guidance, spacing, typography and interaction notes for implementation.</p>
+
+  <h2>Typography</h2>
+  <table>
+    <tr><th>Token</th><th>Usage</th><th>Example</th></tr>
+    <tr><td><code>--font-family</code></td><td>Primary UI font</td><td>Inter, system-ui</td></tr>
+    <tr><td><code>Heading 1</code></td><td>Page titles</td><td>32px / 28px line-height / 600</td></tr>
+    <tr><td><code>Body</code></td><td>Primary paragraph text</td><td>16px / 24px line-height</td></tr>
+  </table>
+
+  <h2>Spacing scale</h2>
+  <p>Use a 4px base spacing system. Common tokens:</p>
+  <pre>xs:4px, sm:8px, md:16px, lg:24px, xl:32px</pre>
+
+  <h2>Components</h2>
+  <h3>Buttons</h3>
+  <ul>
+    <li>Primary: filled with <code>--accent-500</code>, white text, 12px vertical padding, 16px horizontal.</li>
+    <li>Secondary: outline, text color <code>--accent-700</code>.</li>
+    <li>Disabled: reduce opacity to 50% and disable pointer events.</li>
+  </ul>
+
+  <h3>Chips (labels)</h3>
+  <ul>
+    <li>Small rounded rectangles using <code>--chip-bg</code> and <code>--chip-text</code>.</li>
+    <li>Clickable chips should have focus and hover states: outline 2px <code>--accent-300</code> on focus.</li>
+  </ul>
+
+  <h3>Forms & Inputs</h3>
+  <ul>
+    <li>Inputs: 40px height, 12px padding, border-radius 8px.</li>
+    <li>Use labels above inputs; inline errors beneath inputs with <code>--danger</code> color.</li>
+  </ul>
+
+  <h2>States & Transitions</h2>
+  <ul>
+    <li>Use subtle 150ms ease transitions for hover and focus states.</li>
+    <li>Use snackbars for transient feedback (undo for Accept/Reject).</li>
+  </ul>
+
+  <h2>Responsive breakpoints</h2>
+  <ul>
+    <li><code>mobile</code>: up to 640px — single-column, full-screen modals.</li>
+    <li><code>tablet</code>: 641px–1024px — collapsible left rail, modal details.</li>
+    <li><code>desktop</code>: 1025px+ — left rail persistent, detail panel slide-over.</li>
+  </ul>
+
+  <h2>Assets & Icons</h2>
+  <p>Prefer SVG icons (16px/20px/24px). Provide an icon set (feather/heroicons) and keep icons semantically meaningful (priority icons, calendar, settings).</p>
+
+  <h2>Developer Handoff Checklist</h2>
+  <ol>
+    <li>Provide CSS tokens for colors and spacing (see `ux-color-themes.html`).</li>
+    <li>Export SVG icons and provide usage examples with code snippets for each component.</li>
+    <li>Include example markup for Task List Item and Task Detail in the storybook or component library.</li>
+    <li>List accessibility requirements and keyboard interactions in the component docs.</li>
+  </ol>
+
+  <h2>Example markup (Task List Item)</h2>
+  <pre>&lt;li class="task-item"&gt;
+  &lt;input type="checkbox" aria-label="Mark done" /&gt;
+  &lt;div class="title"&gt;Email client about invoice&lt;/div&gt;
+  &lt;div class="chips"&gt;&lt;button class="chip"&gt;Work&lt;/button&gt;&lt;/div&gt;
+  &lt;div class="meta"&gt;&lt;time&gt;Due: Apr 12&lt;/time&gt;&lt;/div&gt;
+&lt;/li&gt;</pre>
+
+</body>
+</html>
