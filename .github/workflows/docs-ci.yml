@@ -21,7 +21,7 @@ jobs:
 
       - name: Install linters
         run: |
-          npm install -g markdownlint-cli@0.34.0 markdown-link-check@4.0.6 cspell@6 alex@8
+          npm install -g markdownlint-cli@0.34.0 markdown-link-check@3.10.3 cspell@6 alex@8
 
       - name: Run markdownlint
         run: |
