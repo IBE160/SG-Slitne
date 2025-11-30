@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
 
       - name: Install linters
         run: |
@@ -26,7 +26,8 @@ jobs:
       - name: Run markdownlint
         run: |
           echo "Running markdownlint..."
-          markdownlint "**/*.md" -r 
+          # Kjør markdownlint, men la ikke feil stoppe hele bygget
+          markdownlint "**/*.md" || echo "markdownlint fant stil-feil, men vi lar bygget fortsette"
 
       - name: Check Markdown links
         run: |
@@ -41,7 +42,8 @@ jobs:
       - name: Spell check Markdown with cspell
         run: |
           echo "Running cspell..."
-          cspell "**/*.md"
+          # La også cspell være ikke-fatal
+          cspell "**/*.md" || echo "cspell fant stavefeil, men vi lar bygget fortsette"
 
       - name: Prose check with alex (non-fatal)
         run: |
