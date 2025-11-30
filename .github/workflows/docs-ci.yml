@@ -1,0 +1,52 @@
+name: Docs CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  docs:
+    name: Lint and validate documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install linters
+        run: |
+          npm install -g markdownlint-cli@0.34.0 markdown-link-check@4.0.6 cspell@6 alex@8
+
+      - name: Run markdownlint
+        run: |
+          echo "Running markdownlint..."
+          markdownlint "**/*.md" -r stylish
+
+      - name: Check Markdown links
+        run: |
+          echo "Checking links in Markdown files..."
+          set -e
+          files=$(git ls-files '*.md')
+          for f in $files; do
+            echo "Checking $f"
+            markdown-link-check "$f"
+          done
+
+      - name: Spell check Markdown with cspell
+        run: |
+          echo "Running cspell..."
+          cspell "**/*.md"
+
+      - name: Prose check with alex (non-fatal)
+        run: |
+          echo "Running alex (reports only, won't fail the job)..."
+          files=$(git ls-files '*.md')
+          for f in $files; do
+            alex "$f" || true
+          done
