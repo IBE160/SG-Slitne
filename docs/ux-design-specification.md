@@ -3,6 +3,16 @@
 ## Overview
 This document describes the UX for the Smart To-Do List MVP: a responsive web app that helps users manage tasks with AI-suggested labels, priorities, and short summaries. The design prioritizes clarity, discoverability, privacy control, and an easy feedback loop for improving AI suggestions.
 
+## Alignment with Proposal & Product Brief
+- Source: `proposal.md` and `docs/product-brief.md` — core MVP requirements are CRUD, AI-generated labels/priority, automatic summaries, and sorting by due date/priority.
+- UX implication: prioritize a fast, low-friction quick-add flow and non-blocking inline AI suggestions so the app demonstrates value immediately without forcing heavy AI interactions.
+
+### How the UX implements brief goals
+- CRUD: task list, task detail panel, and quick-add capture make core actions reachable within 1–2 interactions.
+- AI suggestions: presented as chips and a small priority indicator with Accept/Reject actions and a lightweight `Why?` explanation to improve trust.
+- Summaries: shown in the task detail preview and editable before save; default to a short one-line summary to avoid noise.
+- Sorting: default list sorts by due date and exposes a priority sort option; smart filters (Today, Urgent) are in the left rail.
+
 ## Personas
 - Primary: Busy Professional — needs quick capture and triage of tasks across projects.
 - Secondary: Student / Freelancer — manages multiple small projects and deadlines.
@@ -30,6 +40,9 @@ This document describes the UX for the Smart To-Do List MVP: a responsive web ap
   - For new tasks, suggestion chip group shows detected labels and priority.
   - Each suggestion has Accept / Reject controls; rejections are recorded to improve rules/classifier.
   - A small `Why?` link reveals a short explanation (keywords, heuristics) to build trust.
+
+  ### Feedback capture and product goals
+  - Each Accept/Reject event is captured locally and optionally uploaded if the user opts into Cloud Mode. This creates labeled data for improving classifiers in future iterations (see `docs/product-brief.md` next steps).
 
 4. Settings & Privacy
   - Settings screen includes `AI Analysis` toggle (Default: ON with friendly explanation).
@@ -99,6 +112,8 @@ Task detail (modal/panel):
 - Suggestion acceptance rate
 - Rate of privacy opt-ins (Cloud Mode)
 - Frequency of undo after Accept/Reject
+
+These metrics map directly to the product success criteria in the brief: useful AI output, smooth performance, and correct sync (if enabled).
 
 ## Deliverables for handoff
 - `ux-color-themes.html` — color tokens, typographic scale.
