@@ -60,3 +60,11 @@ The goal of this application is to help users manage their tasks more intelligen
 - Application runs smoothly and loads quickly
 - (Optional) Tasks sync correctly between devices for logged-in users
 
+# Underlag for fase 1
+
+@docs/product-brief.md
+
+@docs/research-technical-2025-11-28.md
+
+@docs/brainstorming-session-results-date.md
+
