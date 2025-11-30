@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mobile Mock — Quick Add</title>
+  <style>
+    body{font-family:Inter,system-ui,Arial,sans-serif;background:#f6f7fb;padding:12px}
+    .phone{width:360px;max-width:100%;margin:0 auto;background:white;border-radius:16px;padding:12px;box-shadow:0 6px 18px rgba(7,12,18,0.08)}
+    .top{display:flex;gap:8px;align-items:center}
+    .title{font-weight:600;font-size:16px}
+    .quick-add{margin-top:12px}
+    .input{display:flex;gap:8px}
+    input[type=text]{flex:1;padding:10px;border-radius:10px;border:1px solid #e6e6e9}
+    button.save{background:#2563eb;color:white;border:none;padding:10px 14px;border-radius:10px}
+    .chips{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+    .chip{background:#eef2ff;color:#1e293b;padding:6px 10px;border-radius:9999px;font-size:13px}
+    .hint{font-size:12px;color:#6b7280;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="phone" role="region" aria-label="Quick add mock">
+    <div class="top"><div class="title">Quick Add</div><div style="margin-left:auto;color:#6b7280;font-size:12px">Draft</div></div>
+    <div class="quick-add">
+      <div class="input">
+        <input type="text" placeholder="Add task (e.g. Call accountant about invoice)" aria-label="Quick add task" />
+        <button class="save" aria-label="Save task">Save</button>
+      </div>
+      <div class="chips" aria-hidden="false">
+        <div class="chip">Work</div>
+        <div class="chip">Finance</div>
+        <div class="chip">Urgent</div>
+      </div>
+      <div class="hint">Suggestions shown inline — tap to accept</div>
+    </div>
+  </div>
+</body>
+</html>

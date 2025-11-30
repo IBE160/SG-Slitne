@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mobile Mock — Task Detail</title>
+  <style>
+    body{font-family:Inter,system-ui,Arial,sans-serif;background:#f6f7fb;padding:12px}
+    .phone{width:360px;max-width:100%;margin:0 auto;background:white;border-radius:16px;padding:12px;box-shadow:0 6px 18px rgba(7,12,18,0.08)}
+    .title{font-weight:600;font-size:18px}
+    .meta{color:#6b7280;font-size:13px;margin-top:6px}
+    .summary{background:#f8fafc;padding:10px;border-radius:8px;margin-top:12px}
+    .suggestions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .chip{background:#eef2ff;color:#1e293b;padding:6px 10px;border-radius:9999px;font-size:13px}
+    .controls{display:flex;gap:8px;margin-top:12px}
+    .btn{flex:1;padding:10px 12px;border-radius:10px;border:none}
+    .accept{background:#16a34a;color:white}
+    .reject{background:#ef4444;color:white}
+  </style>
+</head>
+<body>
+  <div class="phone" role="region" aria-label="Task detail mock">
+    <div class="title">Email client about invoice</div>
+    <div class="meta">Due: Dec 10 · Project: Finance</div>
+    <div class="summary">AI Summary: Send last month's invoice and ask about payment status.</div>
+    <div class="suggestions">
+      <div class="chip">Work</div>
+      <div class="chip">Finance</div>
+      <div class="chip">Follow-up</div>
+    </div>
+    <div style="margin-top:8px;font-size:12px;color:#6b7280">Priority: <strong>2</strong> — medium</div>
+    <div class="controls">
+      <button class="btn accept" aria-label="Accept suggestions">Accept</button>
+      <button class="btn reject" aria-label="Reject suggestions">Reject</button>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:#6b7280">Tap "Why?" to see why these suggestions were made.</div>
+  </div>
+</body>
+</html>
