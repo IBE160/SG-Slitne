@@ -72,7 +72,31 @@ Based on the provided snippets and modern development practices, here is a recom
     *   **LangChain or LlamaIndex:** These frameworks simplify the process of building applications with LLMs. They provide abstractions for prompt management, chaining calls to models, and connecting to data sources.
     *   **Sentence-Transformers:** The best library for the embedding-based approach.
 
-## 5. Next Steps
+## 5. Running the Backend (FastAPI)
+
+To get the FastAPI backend running, follow these steps:
+
+1.  **Navigate to the backend directory:**
+    ```bash
+    cd backend
+    ```
+
+2.  **Install dependencies:**
+    It's recommended to use a virtual environment.
+    ```bash
+    python -m venv venv
+    ./venv/Scripts/activate   # On Windows
+    # source venv/bin/activate # On macOS/Linux
+    pip install -r requirements.txt
+    ```
+
+3.  **Run the FastAPI application:**
+    ```bash
+    uvicorn main:app --reload
+    ```
+    The application will typically run on `http://127.0.0.1:8000`. You can access the automatically generated API documentation (Swagger UI) at `http://127.0.0.1:8000/docs`.
+
+## 6. Next Steps
 
 1.  **Develop the Backend API:** Create a simple FastAPI application with endpoints for CRUD operations on to-do items.
 2.  **Integrate an AI Model:** Start with a zero-shot approach using the OpenAI API, given the existing code. Create a service that takes a to-do item's text and returns a list of suggested labels.
