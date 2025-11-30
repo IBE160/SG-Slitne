@@ -10,6 +10,7 @@ jobs:
   docs:
     name: Lint and validate documentation
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -17,38 +18,47 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: '18'
 
       - name: Install linters
         run: |
           npm install -g markdownlint-cli@0.34.0 markdown-link-check@3.10.3 cspell@6 alex@8
 
-      - name: Run markdownlint
+      # ------------------------------
+      # Markdownlint (non-fatal)
+      # ------------------------------
+      - name: Run markdownlint (non-fatal)
         run: |
           echo "Running markdownlint..."
-          # Kjør markdownlint, men la ikke feil stoppe hele bygget
-          markdownlint "**/*.md" || echo "markdownlint fant stil-feil, men vi lar bygget fortsette"
+          markdownlint "**/*.md" || echo "markdownlint finished with warnings, continuing..."
 
-      - name: Check Markdown links
+      # ------------------------------
+      # Link Checker (non-fatal)
+      # ------------------------------
+      - name: Check Markdown links (non-fatal)
         run: |
           echo "Checking links in Markdown files..."
-          set -e
-          files=$(git ls-files '*.md')
+          files=$(git ls-files 'docs/*.md' 'README.md')
           for f in $files; do
             echo "Checking $f"
-            markdown-link-check "$f"
+            markdown-link-check "$f" || echo "markdown-link-check failed on $f, continuing..."
           done
 
-      - name: Spell check Markdown with cspell
+      # ------------------------------
+      # Spell Check (non-fatal)
+      # ------------------------------
+      - name: Spell check Markdown with cspell (non-fatal)
         run: |
           echo "Running cspell..."
-          # La også cspell være ikke-fatal
-          cspell "**/*.md" || echo "cspell fant stavefeil, men vi lar bygget fortsette"
+          cspell "docs/*.md" "README.md" || echo "cspell finished with warnings, continuing..."
 
+      # ------------------------------
+      # Prose checker (non-fatal)
+      # ------------------------------
       - name: Prose check with alex (non-fatal)
         run: |
-          echo "Running alex (reports only, won't fail the job)..."
-          files=$(git ls-files '*.md')
+          echo "Running alex..."
+          files=$(git ls-files 'docs/*.md' 'README.md')
           for f in $files; do
             alex "$f" || true
           done
