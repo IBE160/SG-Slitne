@@ -1,10 +1,9 @@
 ---
 project: Smart To-Do List with AI Labels
-initialized: 2025-11-29
-status: phase-1-active
-current_phase: phase-1-planning
+date_initialized: 2025-11-29
+status: phase_1_active
+current_phase: phase_1_planning
 phase_1_start_date: 2025-11-30
-
 # ============================================================================
 # BLOCKER DECISIONS (Must resolve before Phase 2)
 # ============================================================================
@@ -83,7 +82,7 @@ phase_0_complete:
       - Feature Priority Matrix (Quick Wins, Big Bets, Fill-ins, Money Pits)
       - Strategic roadmap (Foundation → Core → Convenience → Future)
   research: []
-  product_brief:
+  # research: []  # No research planned yet; add entries here in future phases
     status: COMPLETE
     date: 2025-11-30
     file: docs/product-brief.md
@@ -97,18 +96,18 @@ phase_1_planning:
     blocked_by: []
     date_started: 2025-11-30
     date_completed: 2025-11-30
-    file: docs/prd-smart-todo.md
+    file: docs/prd_smart_todo.md
   epics:
     status: COMPLETE
     date_completed: 2025-11-30
     files:
-      - docs/epic-1-task-crud.md
-      - docs/epic-2-ai-engine.md
-      - docs/epic-3-sorting-filtering-ux.md
+      - docs/epic_1_task_crud.md
+      - docs/epic_2_ai_engine.md
+      - docs/epic_3_sorting_filtering_ux.md
   sprint_1_stories:
     status: COMPLETE
     date_completed: 2025-11-30
-    file: docs/sprint-1-user-stories.md
+    file: docs/sprint_1_user_stories.md
     total_story_points: 47
   validation:
     status: COMPLETE
@@ -186,10 +185,18 @@ action_items:
     date_completed: 2025-11-30
     status: COMPLETED
     deliverables:
-      - docs/epic-1-task-crud.md (31 SP, 5 user stories)
-      - docs/epic-2-ai-engine.md (19 SP, 5 user stories)
-      - docs/epic-3-sorting-filtering-ux.md (33 SP, 9 user stories)
-      - docs/sprint-1-user-stories.md (47 SP, 10 user stories)
+      - file: docs/epic_1_task_crud.md
+        story_points: 31
+        user_stories: 5
+      - file: docs/epic_2_ai_engine.md
+        story_points: 19
+        user_stories: 5
+      - file: docs/epic_3_sorting_filtering_ux.md
+        story_points: 33
+        user_stories: 9
+      - file: docs/sprint_1_user_stories.md
+        story_points: 47
+        user_stories: 10
 
   - id: ACTION-007
     priority: HIGH
@@ -213,7 +220,7 @@ action_items:
 # ============================================================================
 # TIMELINE ESTIMATE (Subject to blocker resolution)
 # ============================================================================
-timeline:
+  total_mvp_estimate: 6-8 weeks (after blocker resolution)
   phase_0_analysis_brainstorm: 1_day # COMPLETE
   blocker_resolution: 3_to_5_days # CRITICAL PATH
   product_brief: 2_days
@@ -253,25 +260,25 @@ team:
 # NOTES
 # ============================================================================
 notes: |
-  - Phase 0 (Analysis & Brainstorming): COMPLETE (2025-11-29)
-  - Phase 1 (Planning): COMPLETE (2025-11-30)
-  
+  Phase 0 (Analysis & Brainstorming): COMPLETE (2025-11-29)
+  Phase 1 (Planning): COMPLETE (2025-11-30)
+
   PLANNING COMPLETION SUMMARY:
-  ✅ PRD validated: PASS (all must-haves mapped, AI strategy aligned, zero gaps)
-  ✅ Three epics created with 19 user stories and 83 total story points:
-     - Epic 1 (Task CRUD): 31 SP, 5 stories
-     - Epic 2 (AI Engine): 19 SP, 5 stories
-     - Epic 3 (Sorting/Filtering/UX): 33 SP, 9 stories
-  ✅ Sprint 1 ready: 10 user stories (47 SP) covering foundation layer (CRUD, UI, persistence)
-  ✅ Critical blockers resolved: Heuristic AI, React + IndexedDB, Phase 2 sync
-  
+    ✅ PRD validated: PASS (all must-haves mapped, AI strategy aligned, zero gaps)
+    ✅ Three epics created with 19 user stories and 83 total story points:
+      Epic 1 (Task CRUD): 31 SP, 5 stories
+      Epic 2 (AI Engine): 19 SP, 5 stories
+      Epic 3 (Sorting/Filtering/UX): 33 SP, 9 stories
+    ✅ Sprint 1 ready: 10 user stories (47 SP) covering foundation layer (CRUD, UI, persistence)
+    ✅ Critical blockers resolved: Heuristic AI, React + IndexedDB, Phase 2 sync
+
   NEXT PHASE (Phase 2 - Architecture):
-  → UX Design Specification (Wireframes, flows, accessibility)
-  → System Architecture Design (Component hierarchy, state management, data flow)
-  → Tech Spike: IndexedDB schema validation, Vite build optimization, test setup
-  → Sprint 1 Kickoff & Development Start (Sprint timeline: 2 weeks)
-  
+    → UX Design Specification (Wireframes, flows, accessibility)
+    → System Architecture Design (Component hierarchy, state management, data flow)
+    → Tech Spike: IndexedDB schema validation, Vite build optimization, test setup
+    → Sprint 1 Kickoff & Development Start (Sprint timeline: 2 weeks)
+
   MVP Timeline: 3-4 weeks (Sprints 1-4, post Phase 2 architecture)
   Key Insight: AI heuristic engine (Sprint 2) is critical path for MVP differentiation
-  
+
   Updated 2025-11-30 by PM
