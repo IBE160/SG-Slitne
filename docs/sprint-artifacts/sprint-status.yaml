@@ -1,0 +1,48 @@
+sprint:
+  id: sprint-1
+  name: Sprint 1 — MVP foundation
+  start: 2025-12-01
+  end: 2025-12-14
+  goals:
+    - Deliver core CRUD and local storage
+    - Implement rule-based AI suggestions and suggestion UI
+    - Provide quick-add and task detail UX
+  stories:
+    - key: STORY-1.1
+      title: Quick-add task
+      epic: Core Task Management
+      estimate: 1d
+      status: todo
+    - key: STORY-1.2
+      title: Edit task details
+      epic: Core Task Management
+      estimate: 1d
+      status: todo
+    - key: STORY-1.3
+      title: Delete & Undo
+      epic: Core Task Management
+      estimate: 0.5d
+      status: todo
+    - key: STORY-2.1
+      title: Rule-based label/priority suggestion
+      epic: AI Suggestions
+      estimate: 2d
+      status: todo
+    - key: STORY-2.2
+      title: Suggestion UI + Why explanation
+      epic: AI Suggestions
+      estimate: 0.5d
+      status: todo
+    - key: STORY-3.1
+      title: Automatic summary preview
+      epic: Summaries & Edit
+      estimate: 1d
+      status: todo
+    - key: STORY-4.1
+      title: Persist tasks to IndexedDB
+      epic: Local Storage & Offline
+      estimate: 1d
+      status: todo
+  blockers: []
+  notes: |
+    Sprint 1 focuses on local-first functionality and a rule-based AI approach. Cloud integration is deferred.
