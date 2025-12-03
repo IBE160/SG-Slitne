@@ -10,10 +10,22 @@ export default function TaskList() {
   const tasks = useTaskStore((state) => state.tasks);
   const [sortBy, setSortBy] = useState<SortOption>('priority');
   const [filterPriority, setFilterPriority] = useState<FilterOption>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Filter and sort tasks
   const displayedTasks = useMemo(() => {
     let filtered = tasks.filter((task) => task.status === 'active');
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((task) => {
+        const titleMatch = task.title.toLowerCase().includes(query);
+        const descriptionMatch = task.description.toLowerCase().includes(query);
+        const labelMatch = task.labels.some((label) => label.toLowerCase().includes(query));
+        return titleMatch || descriptionMatch || labelMatch;
+      });
+    }
 
     // Filter by priority
     if (filterPriority !== 'all') {
@@ -36,23 +48,86 @@ export default function TaskList() {
     });
 
     return sorted;
-  }, [tasks, sortBy, filterPriority]);
+  }, [tasks, sortBy, filterPriority, searchQuery]);
 
   if (displayedTasks.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <p className="text-lg mb-2">No tasks found</p>
-        <p className="text-sm">
-          {filterPriority !== 'all' 
-            ? 'Try adjusting your filters' 
-            : 'Add your first task to get started!'}
-        </p>
+      <div className="space-y-4">
+        {/* Search Bar */}
+        <div className="relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tasks..."
+            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <svg
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+
+        <div className="text-center py-12 text-gray-500">
+          <p className="text-lg mb-2">No tasks found</p>
+          <p className="text-sm">
+            {searchQuery.trim()
+              ? 'No tasks match your search'
+              : filterPriority !== 'all'
+              ? 'Try adjusting your filters'
+              : 'Add your first task to get started!'}
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      {/* Search Bar */}
+      <div className="relative">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search tasks by title, description, or labels..."
+          className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+        <svg
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
+        </svg>
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            aria-label="Clear search"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+      </div>
+
       {/* Sort and Filter Controls */}
       <div className="flex flex-wrap gap-3 items-center justify-between bg-gray-50 p-4 rounded-lg">
         <div className="flex items-center gap-2">
