@@ -104,7 +104,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task> {
     projectId: taskData.projectId,
     labels: taskData.labels || [],
     priority: taskData.priority || 1,
-    status: 'active',
+    status: (taskData.status as any) || 'active',
     dueDate: taskData.dueDate,
     summary: taskData.summary || taskData.title || 'Untitled',
     aiMetadata: {
@@ -248,10 +248,12 @@ export async function getUpcomingTasks(daysAhead = 7): Promise<Task[]> {
   const taskStore = transaction.objectStore('tasks');
   const index = taskStore.index('dueDate');
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Use UTC-normalized dates to keep behavior stable across timezones
+  const now = new Date();
+  const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const today = new Date(todayUTC);
   const futureDate = new Date(today);
-  futureDate.setDate(today.getDate() + daysAhead);
+  futureDate.setUTCDate(today.getUTCDate() + daysAhead);
 
   const todayStr = today.toISOString().split('T')[0];
   const futureStr = futureDate.toISOString().split('T')[0];
@@ -264,8 +266,10 @@ export async function getUpcomingTasks(daysAhead = 7): Promise<Task[]> {
 }
 
 export async function getOverdueTasks(): Promise<Task[]> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Use UTC-normalized date string for stable comparisons
+  const now = new Date();
+  const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const today = new Date(todayUTC);
   const todayStr = today.toISOString().split('T')[0];
 
   const db = await initializeDatabase();
@@ -393,8 +397,10 @@ export async function getTaskStats(): Promise<{
   highPriority: number;
 }> {
   const allTasks = await getAllTasks();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Normalize to UTC date string for consistency in tests and storage
+  const now = new Date();
+  const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const today = new Date(todayUTC);
   const todayStr = today.toISOString().split('T')[0];
 
   return {

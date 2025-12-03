@@ -1,8 +1,8 @@
 // SPIKE-3: Zustand Store Implementation
 // Purpose: Validate state management, persistence, derived state
 
-import { create, subscribeWithSelector } from 'zustand';
-import { persist } from 'zustand/middleware';
+import create from 'zustand';
+import { subscribeWithSelector, persist } from 'zustand/middleware';
 import type { Task, Label, Project } from './db';
 
 // ===== TASK STORE =====
@@ -56,9 +56,10 @@ export const useTaskStore = create<TaskStore>()(
       },
 
       getOverdueTaskCount: () => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayStr = today.toISOString().split('T')[0];
+        // Use UTC date to avoid timezone-related off-by-one errors in tests
+        const now = new Date();
+        const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+        const todayStr = new Date(todayUTC).toISOString().split('T')[0];
 
         return get().tasks.filter(
           (task) => task.dueDate && task.dueDate < todayStr && task.status === 'active'
