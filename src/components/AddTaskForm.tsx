@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useTaskStore } from '../stores';
 import type { Task } from '../services/db';
+import { suggestLabels, type LabelSuggestion } from '../services/ai-engine';
 
 export default function AddTaskForm() {
   const [title, setTitle] = useState('');
@@ -9,8 +10,20 @@ export default function AddTaskForm() {
   const [priority, setPriority] = useState<1 | 2 | 3>(2);
   const [dueDate, setDueDate] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [suggestedLabels, setSuggestedLabels] = useState<LabelSuggestion[]>([]);
 
   const addTask = useTaskStore((state) => state.addTask);
+
+  // Generate AI label suggestions when title/description changes
+  useEffect(() => {
+    if (title.trim() || description.trim()) {
+      const suggestions = suggestLabels(title, description, priority);
+      setSuggestedLabels(suggestions.filter(s => !selectedLabels.includes(s.label)));
+    } else {
+      setSuggestedLabels([]);
+    }
+  }, [title, description, priority, selectedLabels]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +36,7 @@ export default function AddTaskForm() {
       description: description.trim(),
       priority,
       status: 'active',
-      labels: [],
+      labels: selectedLabels,
       dueDate: dueDate || undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -37,10 +50,20 @@ export default function AddTaskForm() {
       setDescription('');
       setPriority(2);
       setDueDate('');
+      setSelectedLabels([]);
+      setSuggestedLabels([]);
       setShowForm(false);
     } catch (error) {
       console.error('Failed to add task:', error);
       alert('Failed to add task. Please try again.');
+    }
+  };
+
+  const handleLabelClick = (label: string) => {
+    if (selectedLabels.includes(label)) {
+      setSelectedLabels(selectedLabels.filter(l => l !== label));
+    } else {
+      setSelectedLabels([...selectedLabels, label]);
     }
   };
 
@@ -86,6 +109,55 @@ export default function AddTaskForm() {
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
+
+      {/* AI Label Suggestions */}
+      {suggestedLabels.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            🤖 Suggested Labels
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {suggestedLabels.map((suggestion) => (
+              <button
+                key={suggestion.label}
+                type="button"
+                onClick={() => handleLabelClick(suggestion.label)}
+                className="px-3 py-1 text-sm bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors border border-blue-200"
+                title={`${suggestion.reason} (${Math.round(suggestion.confidence * 100)}% confidence)`}
+              >
+                + {suggestion.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Selected Labels */}
+      {selectedLabels.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Selected Labels
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {selectedLabels.map((label) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-blue-600 text-white rounded-full"
+              >
+                {label}
+                <button
+                  type="button"
+                  onClick={() => handleLabelClick(label)}
+                  className="hover:bg-blue-700 rounded-full p-0.5"
+                  aria-label={`Remove ${label}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -133,6 +205,8 @@ export default function AddTaskForm() {
             setDescription('');
             setPriority(2);
             setDueDate('');
+            setSelectedLabels([]);
+            setSuggestedLabels([]);
           }}
           className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
         >
