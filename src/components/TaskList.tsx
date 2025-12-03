@@ -99,8 +99,8 @@ export default function TaskList() {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search tasks by title, description, or labels..."
-          className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Search tasks..."
+          className="w-full px-4 py-2 pl-10 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
         <svg
           className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
@@ -129,29 +129,29 @@ export default function TaskList() {
       </div>
 
       {/* Sort and Filter Controls */}
-      <div className="flex flex-wrap gap-3 items-center justify-between bg-gray-50 p-4 rounded-lg">
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between bg-gray-50 p-3 sm:p-4 rounded-lg">
         <div className="flex items-center gap-2">
-          <label htmlFor="sortBy" className="text-sm font-medium text-gray-700">
-            Sort by:
+          <label htmlFor="sortBy" className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">
+            Sort:
           </label>
           <select
             id="sortBy"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="priority">Priority</option>
             <option value="dueDate">Due Date</option>
-            <option value="created">Created Date</option>
+            <option value="created">Created</option>
           </select>
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700">Filter:</label>
-          <div className="flex gap-1">
+          <label className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">Filter:</label>
+          <div className="flex gap-1 flex-wrap">
             <button
               onClick={() => setFilterPriority('all')}
-              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors ${
                 filterPriority === 'all'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -161,7 +161,7 @@ export default function TaskList() {
             </button>
             <button
               onClick={() => setFilterPriority('3')}
-              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors ${
                 filterPriority === '3'
                   ? 'bg-red-600 text-white'
                   : 'bg-white border border-red-300 text-red-700 hover:bg-red-50'
@@ -171,7 +171,7 @@ export default function TaskList() {
             </button>
             <button
               onClick={() => setFilterPriority('2')}
-              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors ${
                 filterPriority === '2'
                   ? 'bg-yellow-600 text-white'
                   : 'bg-white border border-yellow-300 text-yellow-700 hover:bg-yellow-50'
@@ -181,7 +181,7 @@ export default function TaskList() {
             </button>
             <button
               onClick={() => setFilterPriority('1')}
-              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors ${
                 filterPriority === '1'
                   ? 'bg-gray-600 text-white'
                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
