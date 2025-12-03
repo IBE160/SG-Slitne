@@ -56,6 +56,18 @@ export default function TaskItem({ task }: TaskItemProps) {
               {task.description && (
                 <p className="text-sm text-gray-600 mt-1">{task.description}</p>
               )}
+              {task.labels && task.labels.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {task.labels.map((label) => (
+                    <span
+                      key={label}
+                      className="inline-block px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full"
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              )}
               {task.dueDate && (
                 <p className="text-xs text-gray-500 mt-2">
                   Due: {new Date(task.dueDate).toLocaleDateString()}
