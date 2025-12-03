@@ -123,15 +123,22 @@ export default function AddTaskForm() {
           </label>
           <div className="flex flex-wrap gap-2">
             {suggestedLabels.map((suggestion) => (
-              <button
-                key={suggestion.label}
-                type="button"
-                onClick={() => handleLabelClick(suggestion.label)}
-                className="px-3 py-1 text-sm bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors border border-blue-200"
-                title={`${suggestion.reason} (${Math.round(suggestion.confidence * 100)}% confidence)`}
-              >
-                + {suggestion.label}
-              </button>
+              <div key={suggestion.label} className="inline-flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleLabelClick(suggestion.label)}
+                  className="px-3 py-1 text-sm bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors border border-blue-200"
+                  title={`${suggestion.reason} (${Math.round(suggestion.confidence * 100)}% confidence)`}
+                >
+                  + {suggestion.label}
+                </button>
+                <span
+                  className="inline-flex items-center justify-center w-5 h-5 text-[11px] rounded-full bg-gray-100 text-gray-700 border border-gray-200"
+                  title={`${suggestion.reason} (${Math.round(suggestion.confidence * 100)}% confidence)`}
+                >
+                  i
+                </span>
+              </div>
             ))}
           </div>
         </div>

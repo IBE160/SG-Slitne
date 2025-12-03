@@ -5,6 +5,7 @@ import create from 'zustand';
 import { subscribeWithSelector, persist } from 'zustand/middleware';
 import type { Task, Label, Project } from '../services/db';
 import { taskService } from '../services/task-service';
+import { isOffline, enqueueCreate, enqueueUpdate, enqueueDelete } from '../services/offline';
 
 // ===== TASK STORE =====
 
@@ -51,6 +52,10 @@ export const useTaskStore = create<TaskStore>()(
 
     addTask: async (task: Task) => {
       try {
+        // Enqueue for cloud sync if offline
+        if (isOffline()) {
+          enqueueCreate('task', task.id, task as unknown as Record<string, unknown>);
+        }
         const savedTask = await taskService.createTask(task);
         set((state) => ({
           tasks: [...state.tasks, savedTask],
@@ -63,6 +68,10 @@ export const useTaskStore = create<TaskStore>()(
 
     updateTask: async (id: string, updates: Partial<Task>) => {
       try {
+        // Enqueue for cloud sync if offline
+        if (isOffline()) {
+          enqueueUpdate('task', id, updates as unknown as Record<string, unknown>);
+        }
         const updatedTask = await taskService.updateTask(id, updates);
         set((state) => ({
           tasks: state.tasks.map((task) =>
@@ -77,6 +86,10 @@ export const useTaskStore = create<TaskStore>()(
 
     deleteTask: async (id: string) => {
       try {
+        // Enqueue for cloud sync if offline
+        if (isOffline()) {
+          enqueueDelete('task', id);
+        }
         await taskService.deleteTask(id);
         set((state) => ({
           tasks: state.tasks.filter((task) => task.id !== id),

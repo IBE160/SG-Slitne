@@ -19,22 +19,49 @@ const LABEL_KEYWORDS: Record<string, string[]> = {
   'urgent': ['urgent', 'asap', 'today', 'critical', 'emergency', 'important', 'must', 'priority', 'now', 'immediately'],
 };
 
+function hasUrgency(text: string): { score: number; why: string[] } {
+  const words = ['urgent', 'asap', 'today', 'critical', 'immediately', 'now', 'priority'];
+  const hits = words.filter((w) => text.includes(w));
+  return { score: hits.length * 0.2, why: hits.length ? [`Urgency words: ${hits.join(', ')}`] : [] };
+}
+
+function containsTimeWords(text: string): { score: number; why: string[] } {
+  const words = ['tomorrow', 'tonight', 'morning', 'afternoon', 'evening', 'deadline', 'due'];
+  const hits = words.filter((w) => text.includes(w));
+  return { score: hits.length * 0.1, why: hits.length ? [`Time cues: ${hits.join(', ')}`] : [] };
+}
+
+function containsActionVerbs(text: string): { score: number; why: string[] } {
+  const verbs = ['fix', 'call', 'email', 'review', 'prepare', 'submit', 'buy', 'schedule'];
+  const hits = verbs.filter((v) => text.includes(v));
+  return { score: Math.min(0.2, hits.length * 0.05), why: hits.length ? [`Action verbs: ${hits.join(', ')}`] : [] };
+}
+
 export function suggestLabels(title: string, description: string, priority: number): LabelSuggestion[] {
   const text = `${title} ${description}`.toLowerCase();
   const suggestions: LabelSuggestion[] = [];
 
+  const urgency = hasUrgency(text);
+  const time = containsTimeWords(text);
+  const actions = containsActionVerbs(text);
+
   for (const [label, keywords] of Object.entries(LABEL_KEYWORDS)) {
     const matches = keywords.filter((keyword) => text.includes(keyword));
     if (matches.length > 0) {
-      const confidence = Math.min(matches.length * 0.15 + priority * 0.1, 1.0);
+      const base = matches.length * 0.12 + priority * 0.1;
+      const bonus = (urgency.score + time.score + actions.score);
+      const confidence = Math.min(base + bonus, 1.0);
+      const reasons: string[] = [`Keywords: ${matches.join(', ')}`];
+      reasons.push(...urgency.why, ...time.why, ...actions.why);
       suggestions.push({
         label,
         confidence: Number(confidence.toFixed(2)),
-        reason: `Found keywords: ${matches.join(', ')}`,
+        reason: reasons.join(' • '),
       });
     }
   }
 
+  // prefer top-3 by confidence, stable order
   return suggestions.sort((a, b) => b.confidence - a.confidence).slice(0, 3);
 }
 

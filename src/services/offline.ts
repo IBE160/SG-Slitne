@@ -11,6 +11,7 @@ export interface SyncQueueItem {
   data: Record<string, unknown>;
   timestamp: string;
   status: 'pending' | 'synced' | 'failed';
+  lastWriteWins?: boolean; // for simple conflict handling
 }
 
 const SYNC_QUEUE_KEY = 'sync-queue-v1';
@@ -49,6 +50,7 @@ export function addToSyncQueue(item: Omit<SyncQueueItem, 'id' | 'timestamp' | 's
     id: `sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     timestamp: new Date().toISOString(),
     status: 'pending',
+    lastWriteWins: true,
   };
   queue.push(newItem);
   setSyncQueue(queue);
@@ -70,6 +72,49 @@ export function clearSyncQueue(): void {
 
 export function getPendingSyncCount(): number {
   return getSyncQueue().filter((item) => item.status === 'pending').length;
+}
+
+// ===== CLOUD SYNC STUB =====
+
+export interface CloudSyncOptions {
+  cloudEnabled: boolean;
+  endpointBaseUrl?: string;
+}
+
+async function sendToCloud(item: SyncQueueItem, options: CloudSyncOptions): Promise<'synced' | 'failed'> {
+  if (!options.cloudEnabled) return 'failed';
+  // Placeholder: simulate network call and success
+  await new Promise((res) => setTimeout(res, 100));
+  return 'synced';
+}
+
+export async function flushPendingSync(options: CloudSyncOptions): Promise<{ processed: number; failed: number }> {
+  const queue = getSyncQueue();
+  let processed = 0;
+  let failed = 0;
+  for (const item of queue) {
+    if (item.status !== 'pending') continue;
+    try {
+      const result = await sendToCloud(item, options);
+      updateSyncQueueItem(item.id, { status: result });
+      processed += 1;
+    } catch {
+      updateSyncQueueItem(item.id, { status: 'failed' });
+      failed += 1;
+    }
+  }
+  return { processed, failed };
+}
+
+// Convenience wrappers to enqueue operations when offline
+export function enqueueCreate(entityType: SyncQueueItem['entityType'], entityId: string, data: Record<string, unknown>) {
+  return addToSyncQueue({ operation: 'create', entityType, entityId, data });
+}
+export function enqueueUpdate(entityType: SyncQueueItem['entityType'], entityId: string, data: Record<string, unknown>) {
+  return addToSyncQueue({ operation: 'update', entityType, entityId, data });
+}
+export function enqueueDelete(entityType: SyncQueueItem['entityType'], entityId: string) {
+  return addToSyncQueue({ operation: 'delete', entityType, entityId, data: {} });
 }
 
 // ===== PERSISTENCE ACROSS SESSIONS =====

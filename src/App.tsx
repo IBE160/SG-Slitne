@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTaskStore } from './stores';
 import TaskList from './components/TaskList';
 import Settings from './components/Settings';
 import AddTaskForm from './components/AddTaskForm';
+import { isOffline, getPendingSyncCount, flushPendingSync } from './services/offline';
 
 function App() {
   const tasks = useTaskStore((state) => state.tasks);
@@ -11,6 +12,38 @@ function App() {
   const initializeTasks = useTaskStore((state) => state.initializeTasks);
   const activeCount = useTaskStore((state) => state.getActiveTaskCount());
   const overdueCount = useTaskStore((state) => state.getOverdueTaskCount());
+
+  const [offline, setOffline] = useState(isOffline());
+  const [pendingSync, setPendingSync] = useState<number>(0);
+
+  useEffect(() => {
+    const updateStatus = () => {
+      setOffline(isOffline());
+      setPendingSync(getPendingSyncCount());
+    };
+    updateStatus();
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    const interval = setInterval(updateStatus, 5000);
+    return () => {
+      window.removeEventListener('online', updateStatus);
+      window.removeEventListener('offline', updateStatus);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // On becoming online, attempt to flush sync queue if Cloud Mode is enabled
+  const cloudModeEnabled = useTaskStore((s) => s.cloudModeEnabled);
+  useEffect(() => {
+    const onOnline = async () => {
+      if (cloudModeEnabled) {
+        await flushPendingSync({ cloudEnabled: true });
+        setPendingSync(getPendingSyncCount());
+      }
+    };
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [cloudModeEnabled]);
 
   useEffect(() => {
     initializeTasks();
@@ -38,6 +71,16 @@ function App() {
               <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">Sprint 1 - MVP</p>
             </div>
             <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm flex-shrink-0 ml-4">
+              <div
+                className={
+                  offline
+                    ? 'px-2 py-1 rounded-md bg-orange-100 text-orange-800 border border-orange-200'
+                    : 'px-2 py-1 rounded-md bg-green-100 text-green-800 border border-green-200'
+                }
+                title={offline ? 'Offline mode' : 'Online'}
+              >
+                {offline ? 'Offline' : 'Online'}{offline && pendingSync > 0 ? ` • ${pendingSync} pending` : ''}
+              </div>
               <div className="text-center">
                 <div className="text-xl sm:text-2xl font-bold text-blue-600">{activeCount}</div>
                 <div className="text-gray-600 text-xs">Active</div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTaskStore } from "../stores";
+import { getPendingSyncCount, flushPendingSync, clearSyncQueue } from "../services/offline";
 
 export default function Settings() {
   const aiAnalysisEnabled = useTaskStore((s) => s.aiAnalysisEnabled);
@@ -8,13 +9,18 @@ export default function Settings() {
   const setCloudModeEnabled = useTaskStore((s) => s.setCloudModeEnabled);
 
   const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState<number>(0);
 
   useEffect(() => {
     // Optional: open based on hash (#settings)
     if (window.location.hash === "#settings") setOpen(true);
     const onHash = () => setOpen(window.location.hash === "#settings");
     window.addEventListener("hashchange", onHash);
+    const interval = setInterval(() => setPending(getPendingSyncCount()), 3000);
+    setPending(getPendingSyncCount());
     return () => window.removeEventListener("hashchange", onHash);
+    // eslint-disable-next-line no-unreachable
+    clearInterval(interval);
   }, []);
 
   return (
@@ -74,6 +80,39 @@ export default function Settings() {
                 />
                 <span className="w-12 h-6 bg-gray-300 rounded-full relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:rounded-full after:transition peer-checked:bg-green-500 peer-checked:after:left-6"></span>
               </label>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 pt-2 border-t mt-2">
+              <div className="text-sm text-gray-700">
+                Sync Queue
+                <div className="text-xs text-gray-600">Pending: {pending}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="px-3 py-1.5 text-sm rounded-md border bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                  onClick={async () => {
+                    if (!cloudModeEnabled) return;
+                    await flushPendingSync({ cloudEnabled: true });
+                    setPending(getPendingSyncCount());
+                  }}
+                  disabled={!cloudModeEnabled || pending === 0}
+                >
+                  Sync now
+                </button>
+                <button
+                  type="button"
+                  className="px-3 py-1.5 text-sm rounded-md border bg-gray-100 hover:bg-gray-200"
+                  onClick={() => {
+                    if (!confirm('Clear all queued sync items?')) return;
+                    clearSyncQueue();
+                    setPending(getPendingSyncCount());
+                  }}
+                  disabled={pending === 0}
+                >
+                  Clear queue
+                </button>
+              </div>
             </div>
           </div>
           <p className="text-xs text-gray-600">
