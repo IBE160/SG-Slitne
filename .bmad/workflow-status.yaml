@@ -370,11 +370,13 @@ action_items:
     title: "Sprint 1 Planning & Kickoff"
     description: "Team planning meeting, refined user stories, development starts"
     owner: pm
-    date_scheduled: 2025-12-09
-    status: PENDING
+    date_scheduled: 2025-12-03
+    date_started: 2025-12-03
+    date_scheduled_end: 2025-12-16
+    status: IN_PROGRESS
     depends_on: [ACTION-012]
-    duration: "2 weeks (2025-12-09 to 2025-12-20)"
-    note: "Tech spikes PASSED. Go/No-Go decision: GO FOR SPRINT 1 (2025-12-07 @ 5 PM)"
+    duration: "2 weeks (2025-12-03 to 2025-12-16)"
+    note: "Sprint 1 started early by request. Development in progress."
 
   - id: ACTION-014
     priority: MEDIUM
