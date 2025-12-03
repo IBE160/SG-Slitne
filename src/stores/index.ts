@@ -12,6 +12,9 @@ interface TaskStore {
   tasks: Task[];
   loading: boolean;
   initialized: boolean;
+  // Settings flags
+  aiAnalysisEnabled: boolean;
+  cloudModeEnabled: boolean;
   initializeTasks: () => Promise<void>;
   addTask: (task: Task) => Promise<void>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
@@ -20,6 +23,9 @@ interface TaskStore {
   getTaskById: (id: string) => Task | undefined;
   getActiveTaskCount: () => number;
   getOverdueTaskCount: () => number;
+  // Settings setters
+  setAIAnalysisEnabled: (enabled: boolean) => void;
+  setCloudModeEnabled: (enabled: boolean) => void;
 }
 
 export const useTaskStore = create<TaskStore>()(
@@ -27,6 +33,8 @@ export const useTaskStore = create<TaskStore>()(
     tasks: [],
     loading: false,
     initialized: false,
+    aiAnalysisEnabled: true,
+    cloudModeEnabled: false,
 
     initializeTasks: async () => {
       if (get().initialized) return;
@@ -100,6 +108,14 @@ export const useTaskStore = create<TaskStore>()(
       return get().tasks.filter(
         (task) => task.dueDate && task.dueDate < todayStr && task.status === 'active'
       ).length;
+    },
+
+    setAIAnalysisEnabled: (enabled: boolean) => {
+      set({ aiAnalysisEnabled: enabled });
+    },
+
+    setCloudModeEnabled: (enabled: boolean) => {
+      set({ cloudModeEnabled: enabled });
     },
   }))
 );

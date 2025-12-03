@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useTaskStore } from './stores';
 import TaskList from './components/TaskList';
+import Settings from './components/Settings';
 import AddTaskForm from './components/AddTaskForm';
 
 function App() {
@@ -36,7 +37,7 @@ function App() {
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">Smart To-Do List</h1>
               <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">Sprint 1 - MVP</p>
             </div>
-            <div className="flex gap-3 sm:gap-4 text-xs sm:text-sm flex-shrink-0 ml-4">
+            <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm flex-shrink-0 ml-4">
               <div className="text-center">
                 <div className="text-xl sm:text-2xl font-bold text-blue-600">{activeCount}</div>
                 <div className="text-gray-600 text-xs">Active</div>
@@ -47,6 +48,21 @@ function App() {
                   <div className="text-gray-600 text-xs">Overdue</div>
                 </div>
               )}
+              <button
+                type="button"
+                className="px-2 py-1 text-xs sm:text-sm rounded-md border bg-gray-100 hover:bg-gray-200"
+                onClick={() => {
+                  // Toggle hash to open Settings panel
+                  if (window.location.hash === '#settings') {
+                    window.location.hash = '';
+                  } else {
+                    window.location.hash = '#settings';
+                  }
+                }}
+                aria-label="Open settings"
+              >
+                Settings
+              </button>
             </div>
           </div>
         </div>
@@ -55,6 +71,7 @@ function App() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8 pb-20 sm:pb-24">
         <div className="space-y-4 sm:space-y-6">
+          <Settings />
           <AddTaskForm />
           <TaskList />
         </div>

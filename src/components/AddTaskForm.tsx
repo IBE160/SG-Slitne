@@ -14,16 +14,21 @@ export default function AddTaskForm() {
   const [suggestedLabels, setSuggestedLabels] = useState<LabelSuggestion[]>([]);
 
   const addTask = useTaskStore((state) => state.addTask);
+  const aiAnalysisEnabled = useTaskStore((state) => state.aiAnalysisEnabled);
 
   // Generate AI label suggestions when title/description changes
   useEffect(() => {
+    if (!aiAnalysisEnabled) {
+      setSuggestedLabels([]);
+      return;
+    }
     if (title.trim() || description.trim()) {
       const suggestions = suggestLabels(title, description, priority);
       setSuggestedLabels(suggestions.filter(s => !selectedLabels.includes(s.label)));
     } else {
       setSuggestedLabels([]);
     }
-  }, [title, description, priority, selectedLabels]);
+  }, [title, description, priority, selectedLabels, aiAnalysisEnabled]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,7 +116,7 @@ export default function AddTaskForm() {
       </div>
 
       {/* AI Label Suggestions */}
-      {suggestedLabels.length > 0 && (
+      {aiAnalysisEnabled && suggestedLabels.length > 0 && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             🤖 Suggested Labels
