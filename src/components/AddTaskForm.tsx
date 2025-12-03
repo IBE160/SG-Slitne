@@ -12,7 +12,7 @@ export default function AddTaskForm() {
 
   const addTask = useTaskStore((state) => state.addTask);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title.trim()) return;
@@ -29,14 +29,19 @@ export default function AddTaskForm() {
       updatedAt: new Date().toISOString(),
     };
 
-    addTask(newTask);
-    
-    // Reset form
-    setTitle('');
-    setDescription('');
-    setPriority(2);
-    setDueDate('');
-    setShowForm(false);
+    try {
+      await addTask(newTask);
+      
+      // Reset form
+      setTitle('');
+      setDescription('');
+      setPriority(2);
+      setDueDate('');
+      setShowForm(false);
+    } catch (error) {
+      console.error('Failed to add task:', error);
+      alert('Failed to add task. Please try again.');
+    }
   };
 
   if (!showForm) {

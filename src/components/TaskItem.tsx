@@ -9,16 +9,26 @@ interface TaskItemProps {
 export default function TaskItem({ task }: TaskItemProps) {
   const { updateTask, deleteTask } = useTaskStore();
 
-  const handleToggleComplete = () => {
-    updateTask(task.id, {
-      status: task.status === 'active' ? 'completed' : 'active',
-      completedAt: task.status === 'active' ? new Date().toISOString() : undefined,
-    });
+  const handleToggleComplete = async () => {
+    try {
+      await updateTask(task.id, {
+        status: task.status === 'active' ? 'completed' : 'active',
+        completedAt: task.status === 'active' ? new Date().toISOString() : undefined,
+      });
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      alert('Failed to update task. Please try again.');
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (confirm('Delete this task?')) {
-      deleteTask(task.id);
+      try {
+        await deleteTask(task.id);
+      } catch (error) {
+        console.error('Failed to delete task:', error);
+        alert('Failed to delete task. Please try again.');
+      }
     }
   };
 

@@ -3,15 +3,19 @@
 
 import create from 'zustand';
 import { subscribeWithSelector, persist } from 'zustand/middleware';
-import type { Task, Label, Project } from './db';
+import type { Task, Label, Project } from '../services/db';
+import { taskService } from '../services/task-service';
 
 // ===== TASK STORE =====
 
 interface TaskStore {
   tasks: Task[];
-  addTask: (task: Task) => void;
-  updateTask: (id: string, updates: Partial<Task>) => void;
-  deleteTask: (id: string) => void;
+  loading: boolean;
+  initialized: boolean;
+  initializeTasks: () => Promise<void>;
+  addTask: (task: Task) => Promise<void>;
+  updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
   setTasks: (tasks: Task[]) => void;
   getTaskById: (id: string) => Task | undefined;
   getActiveTaskCount: () => number;
@@ -19,58 +23,85 @@ interface TaskStore {
 }
 
 export const useTaskStore = create<TaskStore>()(
-  persist(
-    subscribeWithSelector((set, get) => ({
-      tasks: [],
+  subscribeWithSelector((set, get) => ({
+    tasks: [],
+    loading: false,
+    initialized: false,
 
-      addTask: (task: Task) => {
+    initializeTasks: async () => {
+      if (get().initialized) return;
+      
+      set({ loading: true });
+      try {
+        const tasks = await taskService.initialize();
+        set({ tasks, initialized: true, loading: false });
+      } catch (error) {
+        console.error('Failed to initialize tasks:', error);
+        set({ loading: false });
+      }
+    },
+
+    addTask: async (task: Task) => {
+      try {
+        const savedTask = await taskService.createTask(task);
         set((state) => ({
-          tasks: [...state.tasks, task],
+          tasks: [...state.tasks, savedTask],
         }));
-      },
+      } catch (error) {
+        console.error('Failed to add task:', error);
+        throw error;
+      }
+    },
 
-      updateTask: (id: string, updates: Partial<Task>) => {
+    updateTask: async (id: string, updates: Partial<Task>) => {
+      try {
+        const updatedTask = await taskService.updateTask(id, updates);
         set((state) => ({
           tasks: state.tasks.map((task) =>
-            task.id === id ? { ...task, ...updates } : task
+            task.id === id ? updatedTask : task
           ),
         }));
-      },
+      } catch (error) {
+        console.error('Failed to update task:', error);
+        throw error;
+      }
+    },
 
-      deleteTask: (id: string) => {
+    deleteTask: async (id: string) => {
+      try {
+        await taskService.deleteTask(id);
         set((state) => ({
           tasks: state.tasks.filter((task) => task.id !== id),
         }));
-      },
+      } catch (error) {
+        console.error('Failed to delete task:', error);
+        throw error;
+      }
+    },
 
-      setTasks: (tasks: Task[]) => {
-        set({ tasks });
-      },
+    setTasks: (tasks: Task[]) => {
+      set({ tasks });
+    },
 
-      getTaskById: (id: string) => {
-        return get().tasks.find((task) => task.id === id);
-      },
+    getTaskById: (id: string) => {
+      return get().tasks.find((task) => task.id === id);
+    },
 
-      getActiveTaskCount: () => {
-        return get().tasks.filter((task) => task.status === 'active').length;
-      },
+    getActiveTaskCount: () => {
+      return get().tasks.filter((task) => task.status === 'active').length;
+    },
 
-      getOverdueTaskCount: () => {
-        // Use UTC date to avoid timezone-related off-by-one errors in tests
-        const now = new Date();
-        const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-        const todayStr = new Date(todayUTC).toISOString().split('T')[0];
+    getOverdueTaskCount: () => {
+      // Use UTC date to avoid timezone-related off-by-one errors in tests
+      const now = new Date();
+      const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      const todayStr = new Date(todayUTC).toISOString().split('T')[0];
 
-        return get().tasks.filter(
-          (task) => task.dueDate && task.dueDate < todayStr && task.status === 'active'
-        ).length;
-      },
-    })),
-    {
-      name: 'task-store',
-      partialize: (state) => ({ tasks: state.tasks }),
-    }
-  )
+      return get().tasks.filter(
+        (task) => task.dueDate && task.dueDate < todayStr && task.status === 'active'
+      ).length;
+    },
+  }))
 );
 
 // ===== LABEL STORE =====

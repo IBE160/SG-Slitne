@@ -38,30 +38,30 @@ describe('SPIKE-3: Zustand State Management', () => {
       useTaskStore.setState({ tasks: [] });
     });
 
-    it('should add a task to store', () => {
+    it('should add a task to store', async () => {
       const task = createMockTask();
-      useTaskStore.getState().addTask(task);
+      await useTaskStore.getState().addTask(task);
 
       const tasks = useTaskStore.getState().tasks;
       expect(tasks).toHaveLength(1);
       expect(tasks[0].id).toBe(task.id);
     });
 
-    it('should update a task in store', () => {
+    it('should update a task in store', async () => {
       const task = createMockTask();
-      useTaskStore.getState().addTask(task);
+      await useTaskStore.getState().addTask(task);
 
-      useTaskStore.getState().updateTask(task.id, { title: 'Updated Title' });
+      await useTaskStore.getState().updateTask(task.id, { title: 'Updated Title' });
 
       const updated = useTaskStore.getState().getTaskById(task.id);
       expect(updated?.title).toBe('Updated Title');
     });
 
-    it('should delete a task from store', () => {
+    it('should delete a task from store', async () => {
       const task = createMockTask();
-      useTaskStore.getState().addTask(task);
+      await useTaskStore.getState().addTask(task);
 
-      useTaskStore.getState().deleteTask(task.id);
+      await useTaskStore.getState().deleteTask(task.id);
 
       const tasks = useTaskStore.getState().tasks;
       expect(tasks).toHaveLength(0);
@@ -74,34 +74,34 @@ describe('SPIKE-3: Zustand State Management', () => {
       expect(useTaskStore.getState().tasks).toHaveLength(3);
     });
 
-    it('should retrieve task by ID', () => {
+    it('should retrieve task by ID', async () => {
       const task = createMockTask();
-      useTaskStore.getState().addTask(task);
+      await useTaskStore.getState().addTask(task);
 
       const retrieved = useTaskStore.getState().getTaskById(task.id);
       expect(retrieved?.id).toBe(task.id);
     });
 
-    it('should calculate active task count', () => {
-      useTaskStore.getState().addTask(createMockTask({ status: 'active' }));
-      useTaskStore.getState().addTask(createMockTask({ status: 'active' }));
-      useTaskStore.getState().addTask(createMockTask({ status: 'completed' }));
+    it('should calculate active task count', async () => {
+      await useTaskStore.getState().addTask(createMockTask({ status: 'active' }));
+      await useTaskStore.getState().addTask(createMockTask({ status: 'active' }));
+      await useTaskStore.getState().addTask(createMockTask({ status: 'completed' }));
 
       const activeCount = useTaskStore.getState().getActiveTaskCount();
       expect(activeCount).toBe(2);
     });
 
-    it('should calculate overdue task count', () => {
+    it('should calculate overdue task count', async () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
 
-      useTaskStore.getState().addTask(
+      await useTaskStore.getState().addTask(
         createMockTask({
           status: 'active',
           dueDate: yesterday.toISOString().split('T')[0],
         })
       );
-      useTaskStore.getState().addTask(createMockTask({ status: 'active' }));
+      await useTaskStore.getState().addTask(createMockTask({ status: 'active' }));
 
       const overdueCount = useTaskStore.getState().getOverdueTaskCount();
       expect(overdueCount).toBe(1);
@@ -234,10 +234,10 @@ describe('SPIKE-3: Zustand State Management', () => {
       useTaskStore.setState({ tasks: [] });
     });
 
-    it('should calculate statistics from derived state', () => {
-      useTaskStore.getState().addTask(createMockTask({ status: 'active' }));
-      useTaskStore.getState().addTask(createMockTask({ status: 'active' }));
-      useTaskStore.getState().addTask(createMockTask({ status: 'completed' }));
+    it('should calculate statistics from derived state', async () => {
+      await useTaskStore.getState().addTask(createMockTask({ status: 'active' }));
+      await useTaskStore.getState().addTask(createMockTask({ status: 'active' }));
+      await useTaskStore.getState().addTask(createMockTask({ status: 'completed' }));
 
       const activeCount = useTaskStore.getState().getActiveTaskCount();
       expect(activeCount).toBe(2);

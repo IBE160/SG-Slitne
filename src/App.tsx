@@ -1,12 +1,30 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTaskStore } from './stores';
 import TaskList from './components/TaskList';
 import AddTaskForm from './components/AddTaskForm';
 
 function App() {
   const tasks = useTaskStore((state) => state.tasks);
+  const loading = useTaskStore((state) => state.loading);
+  const initialized = useTaskStore((state) => state.initialized);
+  const initializeTasks = useTaskStore((state) => state.initializeTasks);
   const activeCount = useTaskStore((state) => state.getActiveTaskCount());
   const overdueCount = useTaskStore((state) => state.getOverdueTaskCount());
+
+  useEffect(() => {
+    initializeTasks();
+  }, [initializeTasks]);
+
+  if (!initialized && loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading tasks...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
