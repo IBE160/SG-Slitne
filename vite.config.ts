@@ -14,15 +14,6 @@ export default defineConfig({
     minify: 'terser',
     sourcemap: false,
     reportCompressedSize: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'zustand-vendor': ['zustand'],
-          'utils': ['uuid'],
-        },
-      },
-    },
   },
   define: {
     __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
