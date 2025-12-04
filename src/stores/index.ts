@@ -6,6 +6,7 @@ import { subscribeWithSelector, persist } from 'zustand/middleware';
 import type { Task, Label, Project } from '../services/db';
 import { taskService } from '../services/task-service';
 import { isOffline, enqueueCreate, enqueueUpdate, enqueueDelete } from '../services/offline';
+import { trackEvent } from '../services/telemetry';
 
 // ===== TASK STORE =====
 
@@ -16,6 +17,7 @@ interface TaskStore {
   // Settings flags
   aiAnalysisEnabled: boolean;
   cloudModeEnabled: boolean;
+  telemetryEnabled: boolean;
   initializeTasks: () => Promise<void>;
   addTask: (task: Task) => Promise<void>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
@@ -27,6 +29,7 @@ interface TaskStore {
   // Settings setters
   setAIAnalysisEnabled: (enabled: boolean) => void;
   setCloudModeEnabled: (enabled: boolean) => void;
+  setTelemetryEnabled: (enabled: boolean) => void;
 }
 
 export const useTaskStore = create<TaskStore>()(
@@ -36,6 +39,7 @@ export const useTaskStore = create<TaskStore>()(
     initialized: false,
     aiAnalysisEnabled: true,
     cloudModeEnabled: false,
+    telemetryEnabled: false,
 
     initializeTasks: async () => {
       if (get().initialized) return;
@@ -129,6 +133,10 @@ export const useTaskStore = create<TaskStore>()(
 
     setCloudModeEnabled: (enabled: boolean) => {
       set({ cloudModeEnabled: enabled });
+    },
+
+    setTelemetryEnabled: (enabled: boolean) => {
+      set({ telemetryEnabled: enabled });
     },
   }))
 );

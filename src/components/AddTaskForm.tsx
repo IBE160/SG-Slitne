@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useTaskStore } from '../stores';
 import type { Task } from '../services/db';
 import { suggestLabels, type LabelSuggestion } from '../services/ai-engine';
+import { trackEvent } from '../services/telemetry';
 
 export default function AddTaskForm() {
   const [title, setTitle] = useState('');
@@ -15,6 +16,7 @@ export default function AddTaskForm() {
 
   const addTask = useTaskStore((state) => state.addTask);
   const aiAnalysisEnabled = useTaskStore((state) => state.aiAnalysisEnabled);
+  const telemetryEnabled = useTaskStore((state) => state.telemetryEnabled);
 
   // Generate AI label suggestions when title/description changes
   useEffect(() => {
@@ -25,10 +27,27 @@ export default function AddTaskForm() {
     if (title.trim() || description.trim()) {
       const suggestions = suggestLabels(title, description, priority);
       setSuggestedLabels(suggestions.filter(s => !selectedLabels.includes(s.label)));
+      
+      // Track suggestions being shown
+      if (telemetryEnabled && suggestions.length > 0) {
+        suggestions.forEach(suggestion => {
+          trackEvent({
+            type: 'suggestion_shown',
+            label: suggestion.label,
+            confidence: suggestion.confidence,
+            reason: suggestion.reason,
+            taskContext: {
+              title: title.trim(),
+              priority,
+              hasDescription: !!description.trim(),
+            },
+          });
+        });
+      }
     } else {
       setSuggestedLabels([]);
     }
-  }, [title, description, priority, selectedLabels, aiAnalysisEnabled]);
+  }, [title, description, priority, selectedLabels, aiAnalysisEnabled, telemetryEnabled]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,8 +86,25 @@ export default function AddTaskForm() {
   const handleLabelClick = (label: string) => {
     if (selectedLabels.includes(label)) {
       setSelectedLabels(selectedLabels.filter(l => l !== label));
+      // Track rejection
+      if (telemetryEnabled) {
+        trackEvent({
+          type: 'suggestion_rejected',
+          label,
+        });
+      }
     } else {
       setSelectedLabels([...selectedLabels, label]);
+      // Track acceptance
+      if (telemetryEnabled) {
+        const suggestion = suggestedLabels.find(s => s.label === label);
+        trackEvent({
+          type: 'suggestion_accepted',
+          label,
+          confidence: suggestion?.confidence,
+          reason: suggestion?.reason,
+        });
+      }
     }
   };
 
