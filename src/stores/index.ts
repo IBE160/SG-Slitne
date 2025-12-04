@@ -1,7 +1,7 @@
 // SPIKE-3: Zustand Store Implementation
 // Purpose: Validate state management, persistence, derived state
 
-import create from 'zustand';
+import { create } from 'zustand';
 import { subscribeWithSelector, persist } from 'zustand/middleware';
 import type { Task, Label, Project } from '../services/db';
 import { taskService } from '../services/task-service';
