@@ -95,18 +95,22 @@ export default function TaskList() {
     <div className="space-y-4">
       {/* Search Bar */}
       <div className="relative">
+        <label htmlFor="search-tasks" className="sr-only">Search tasks</label>
         <input
+          id="search-tasks"
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search tasks..."
+          aria-label="Search tasks by title, description, or label"
           className="w-full px-4 py-2 pl-10 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
         <svg
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"
@@ -118,10 +122,10 @@ export default function TaskList() {
         {searchQuery && (
           <button
             onClick={() => setSearchQuery('')}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded transition-colors"
             aria-label="Clear search"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -132,12 +136,13 @@ export default function TaskList() {
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between bg-gray-50 p-3 sm:p-4 rounded-lg">
         <div className="flex items-center gap-2">
           <label htmlFor="sortBy" className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">
-            Sort:
+            Sort by:
           </label>
           <select
             id="sortBy"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
+            aria-label="Sort tasks by"
             className="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="priority">Priority</option>
@@ -147,11 +152,13 @@ export default function TaskList() {
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">Filter:</label>
+          <label className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">Filter by priority:</label>
           <div className="flex gap-1 flex-wrap">
             <button
               onClick={() => setFilterPriority('all')}
-              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors ${
+              aria-label="Filter all priorities"
+              aria-pressed={filterPriority === 'all'}
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 ${
                 filterPriority === 'all'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -161,7 +168,9 @@ export default function TaskList() {
             </button>
             <button
               onClick={() => setFilterPriority('3')}
-              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors ${
+              aria-label="Filter high priority tasks"
+              aria-pressed={filterPriority === '3'}
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 ${
                 filterPriority === '3'
                   ? 'bg-red-600 text-white'
                   : 'bg-white border border-red-300 text-red-700 hover:bg-red-50'
@@ -171,7 +180,9 @@ export default function TaskList() {
             </button>
             <button
               onClick={() => setFilterPriority('2')}
-              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors ${
+              aria-label="Filter medium priority tasks"
+              aria-pressed={filterPriority === '2'}
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 ${
                 filterPriority === '2'
                   ? 'bg-yellow-600 text-white'
                   : 'bg-white border border-yellow-300 text-yellow-700 hover:bg-yellow-50'
@@ -181,7 +192,9 @@ export default function TaskList() {
             </button>
             <button
               onClick={() => setFilterPriority('1')}
-              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors ${
+              aria-label="Filter low priority tasks"
+              aria-pressed={filterPriority === '1'}
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 ${
                 filterPriority === '1'
                   ? 'bg-gray-600 text-white'
                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -194,7 +207,7 @@ export default function TaskList() {
       </div>
 
       {/* Task Count */}
-      <div className="text-sm text-gray-600">
+      <div className="text-sm text-gray-600" aria-live="polite" aria-atomic="true">
         Showing {displayedTasks.length} task{displayedTasks.length !== 1 ? 's' : ''}
       </div>
 

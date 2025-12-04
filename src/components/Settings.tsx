@@ -26,7 +26,7 @@ export default function Settings() {
   return (
     <div className="p-3">
       <button
-        className="px-3 py-2 text-sm rounded-md bg-gray-100 hover:bg-gray-200 border"
+        className="px-3 py-2 text-sm rounded-md bg-gray-100 hover:bg-gray-200 border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
         onClick={() => {
           setOpen((v) => !v);
           // Keep hash in sync so header button reflects state
@@ -36,14 +36,21 @@ export default function Settings() {
             window.location.hash = "";
           }
         }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape' && open) {
+            setOpen(false);
+            window.location.hash = "";
+          }
+        }}
         aria-expanded={open}
         aria-controls="settings-panel"
+        aria-label="Toggle settings panel"
       >
         {open ? "Close Settings" : "Open Settings"}
       </button>
 
       {open && (
-        <div id="settings-panel" className="mt-3 space-y-4">
+        <div id="settings-panel" className="mt-3 space-y-4" role="region" aria-label="Settings and privacy controls">
           <h2 className="text-lg font-semibold">Settings & Privacy</h2>
           <div className="rounded-lg border p-3 space-y-3 bg-white">
             <div className="flex items-start justify-between gap-3">
@@ -59,6 +66,7 @@ export default function Settings() {
                   className="sr-only peer"
                   checked={aiAnalysisEnabled}
                   onChange={(e) => setAIAnalysisEnabled(e.target.checked)}
+                  aria-label="Enable AI Analysis for local label suggestions and insights"
                 />
                 <span className="w-12 h-6 bg-gray-300 rounded-full relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:rounded-full after:transition peer-checked:bg-green-500 peer-checked:after:left-6"></span>
               </label>
@@ -77,6 +85,7 @@ export default function Settings() {
                   className="sr-only peer"
                   checked={cloudModeEnabled}
                   onChange={(e) => setCloudModeEnabled(e.target.checked)}
+                  aria-label="Enable Cloud Mode for future cloud sync features"
                 />
                 <span className="w-12 h-6 bg-gray-300 rounded-full relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:rounded-full after:transition peer-checked:bg-green-500 peer-checked:after:left-6"></span>
               </label>
@@ -90,25 +99,27 @@ export default function Settings() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="px-3 py-1.5 text-sm rounded-md border bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="px-3 py-1.5 text-sm rounded-md border bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-50 transition-colors"
                   onClick={async () => {
                     if (!cloudModeEnabled) return;
                     await flushPendingSync({ cloudEnabled: true });
                     setPending(getPendingSyncCount());
                   }}
                   disabled={!cloudModeEnabled || pending === 0}
+                  aria-label="Sync pending changes to cloud"
                 >
                   Sync now
                 </button>
                 <button
                   type="button"
-                  className="px-3 py-1.5 text-sm rounded-md border bg-gray-100 hover:bg-gray-200"
+                  className="px-3 py-1.5 text-sm rounded-md border bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1 disabled:opacity-50 transition-colors"
                   onClick={() => {
                     if (!confirm('Clear all queued sync items?')) return;
                     clearSyncQueue();
                     setPending(getPendingSyncCount());
                   }}
                   disabled={pending === 0}
+                  aria-label="Clear all queued sync items"
                 >
                   Clear queue
                 </button>

@@ -63,7 +63,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10" role="banner">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
@@ -77,7 +77,9 @@ function App() {
                     ? 'px-2 py-1 rounded-md bg-orange-100 text-orange-800 border border-orange-200'
                     : 'px-2 py-1 rounded-md bg-green-100 text-green-800 border border-green-200'
                 }
+                aria-label={offline ? `Offline mode, ${pendingSync} pending sync items` : 'Online'}
                 title={offline ? 'Offline mode' : 'Online'}
+                role="status"
               >
                 {offline ? 'Offline' : 'Online'}{offline && pendingSync > 0 ? ` • ${pendingSync} pending` : ''}
               </div>
@@ -93,7 +95,7 @@ function App() {
               )}
               <button
                 type="button"
-                className="px-2 py-1 text-xs sm:text-sm rounded-md border bg-gray-100 hover:bg-gray-200"
+                className="px-2 py-1 text-xs sm:text-sm rounded-md border bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                 onClick={() => {
                   // Toggle hash to open Settings panel
                   if (window.location.hash === '#settings') {
@@ -102,7 +104,12 @@ function App() {
                     window.location.hash = '#settings';
                   }
                 }}
-                aria-label="Open settings"
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape' && window.location.hash === '#settings') {
+                    window.location.hash = '';
+                  }
+                }}
+                aria-label="Open settings and privacy controls"
               >
                 Settings
               </button>
@@ -112,7 +119,7 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8 pb-20 sm:pb-24">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8 pb-20 sm:pb-24" role="main" aria-label="Task list and controls">
         <div className="space-y-4 sm:space-y-6">
           <Settings />
           <AddTaskForm />
@@ -121,12 +128,13 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 sm:py-3">
+      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 sm:py-3" role="contentinfo">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="flex justify-center gap-2 sm:gap-4 text-xs text-gray-500 flex-wrap">
             <span className="whitespace-nowrap">✅ IndexedDB</span>
             <span className="whitespace-nowrap">✅ Zustand</span>
             <span className="whitespace-nowrap">✅ Tests</span>
+            <span className="whitespace-nowrap">✅ Accessibility</span>
           </div>
         </div>
       </footer>
