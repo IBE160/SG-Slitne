@@ -2,7 +2,7 @@
 // Purpose: Validate state management, persistence, derived state
 
 import { create } from 'zustand';
-import { subscribeWithSelector, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 import type { Task, Label, Project } from '../services/db';
 import { taskService } from '../services/task-service';
 import { isOffline, enqueueCreate, enqueueUpdate, enqueueDelete } from '../services/offline';
@@ -43,8 +43,7 @@ interface TaskStore {
   updateViewById: (viewId: string, updates: Partial<Omit<TaskView, 'id' | 'createdAt' | 'isPreset'>>) => TaskView;
 }
 
-export const useTaskStore = create<TaskStore>()(
-  subscribeWithSelector((set, get) => ({
+export const useTaskStore = create<TaskStore>((set, get) => ({
     tasks: [],
     loading: false,
     initialized: false,
@@ -181,9 +180,9 @@ export const useTaskStore = create<TaskStore>()(
       set({ savedViews: views });
       return view;
     },
-  }))
-);
+  }));
 
+// ===== LABEL STORE =====
 // ===== LABEL STORE =====
 
 interface LabelStore {
@@ -196,7 +195,7 @@ interface LabelStore {
   getLabelCount: () => number;
 }
 
-export const useLabelStore = create<LabelStore>()(
+export const useLabelStore = create<LabelStore>(
   persist(
     (set, get) => ({
       labels: [],
@@ -255,7 +254,7 @@ interface UIStore {
   setFilterStatus: (status: 'all' | 'active' | 'completed' | 'archived') => void;
 }
 
-export const useUIStore = create<UIStore>()(
+export const useUIStore = create<UIStore>(
   persist(
     (set) => ({
       sidebarOpen: true,
