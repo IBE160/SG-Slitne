@@ -75,7 +75,7 @@ export default function AddTaskForm() {
       status: 'active',
       labels: selectedLabels,
       dueDate: dueDate || undefined,
-      projectId: projectId || undefined,
+      ...(projectId && { projectId }),
       summary: '',
       aiMetadata: {
         labelConfidence: [],
