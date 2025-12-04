@@ -1,5 +1,18 @@
 // SPIKE-1: IndexedDB Service
 // Purpose: Complete CRUD operations, query performance, transaction handling
+/**
+ * Database Service Module - IndexedDB operations for offline persistence
+ * 
+ * Provides complete CRUD operations for tasks, labels, and projects with
+ * transaction support, indexing for performance, and full offline capability.
+ * 
+ * Stores:
+ * - tasks: Main task storage with indexes on dueDate, priority, status, labels, projectId
+ * - labels: Tag/category definitions with unique name constraint
+ * - projects: Project organization with unique name constraint
+ * 
+ * @module db
+ */
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -49,6 +62,14 @@ const DB_VERSION = 1;
 
 let dbInstance: IDBDatabase | null = null;
 
+/**
+ * Initialize the IndexedDB database with required stores
+ * Creates object stores for tasks, labels, and projects with indexes
+ * Safe to call multiple times - returns existing instance if already initialized
+ * 
+ * @returns {Promise<IDBDatabase>} The initialized database instance
+ * @throws {Error} If database initialization fails
+ */
 export async function initializeDatabase(): Promise<IDBDatabase> {
   if (dbInstance) return dbInstance;
 
@@ -84,7 +105,17 @@ export async function initializeDatabase(): Promise<IDBDatabase> {
       // Create projects store
       if (!db.objectStoreNames.contains('projects')) {
         const projectStore = db.createObjectStore('projects', { keyPath: 'id' });
-        projectStore.createIndex('name', 'name', { unique: true });
+/**
+ * Create a new task in the database
+ * Automatically generates UUID and timestamps
+ * 
+ * @param {Partial<Task>} taskData - Task data (title required, other fields optional)
+ * @returns {Promise<Task>} The created task with generated id and timestamps
+ * @throws {Error} If task creation fails (e.g., duplicate ID)
+ * @example
+ * const task = await createTask({ title: 'Buy milk', priority: 2 });
+ */
+export async function createTask(taskData: Partial<Task>): Promise<Task> {
       }
     };
   });
@@ -136,6 +167,10 @@ export async function getTask(id: string): Promise<Task | null> {
   });
 }
 
+/**
+ * Retrieve all tasks from the database
+ * @returns {Promise<Task[]>} Array of all tasks
+ */
 export async function getAllTasks(): Promise<Task[]> {
   const db = await initializeDatabase();
   const transaction = db.transaction(['tasks'], 'readonly');
@@ -148,6 +183,15 @@ export async function getAllTasks(): Promise<Task[]> {
   });
 }
 
+/**
+ * Update an existing task in the database
+ * Preserves creation timestamp and updates modification timestamp
+ * 
+ * @param {string} id - Task ID to update
+ * @param {Partial<Task>} updates - Fields to update
+ * @returns {Promise<Task>} The updated task
+ * @throws {Error} If task not found
+ */
 export async function updateTask(id: string, updates: Partial<Task>): Promise<Task> {
   const db = await initializeDatabase();
   const transaction = db.transaction(['tasks'], 'readwrite');
@@ -176,6 +220,12 @@ export async function updateTask(id: string, updates: Partial<Task>): Promise<Ta
   });
 }
 
+/**
+ * Delete a task from the database
+ * 
+ * @param {string} id - Task ID to delete
+ * @returns {Promise<void>} Resolves when deletion is complete
+ */
 export async function deleteTask(id: string): Promise<void> {
   const db = await initializeDatabase();
   const transaction = db.transaction(['tasks'], 'readwrite');
