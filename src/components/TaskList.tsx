@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTaskStore } from '../stores';
 import TaskItem from './TaskItem';
 import type { Project } from '../services/db';
@@ -7,7 +7,7 @@ import { getAllProjects } from '../services/db';
 type SortOption = 'priority' | 'dueDate' | 'created';
 type FilterOption = 'all' | '1' | '2' | '3';
 
-export default function TaskList() {
+const TaskList = React.memo(function TaskList() {
   const tasks = useTaskStore((state) => state.tasks);
   const savedViews = useTaskStore((state) => state.savedViews);
   const currentViewId = useTaskStore((state) => state.currentViewId);
@@ -36,35 +36,37 @@ export default function TaskList() {
     setShowBulkActions(selectedTasks.size > 0);
   }, [selectedTasks]);
 
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     const allProjects = await getAllProjects();
     setProjects(allProjects.filter(p => p.status === 'active'));
-  };
+  }, []);
 
-  const toggleSelectionMode = () => {
-    setSelectionMode(!selectionMode);
+  const toggleSelectionMode = useCallback(() => {
+    setSelectionMode(prev => !prev);
     setSelectedTasks(new Set());
-  };
+  }, []);
 
-  const toggleTaskSelection = (taskId: string) => {
-    const newSelection = new Set(selectedTasks);
-    if (newSelection.has(taskId)) {
-      newSelection.delete(taskId);
-    } else {
-      newSelection.add(taskId);
-    }
-    setSelectedTasks(newSelection);
-  };
+  const toggleTaskSelection = useCallback((taskId: string) => {
+    setSelectedTasks(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(taskId)) {
+        newSelection.delete(taskId);
+      } else {
+        newSelection.add(taskId);
+      }
+      return newSelection;
+    });
+  }, []);
 
-  const selectAll = () => {
+  const selectAll = useCallback(() => {
     setSelectedTasks(new Set(displayedTasks.map(t => t.id)));
-  };
+  }, [displayedTasks]);
 
-  const deselectAll = () => {
+  const deselectAll = useCallback(() => {
     setSelectedTasks(new Set());
-  };
+  }, []);
 
-  const handleBulkComplete = async () => {
+  const handleBulkComplete = useCallback(async () => {
     const confirmed = confirm(`Mark ${selectedTasks.size} task(s) as complete?`);
     if (!confirmed) return;
 
@@ -74,9 +76,9 @@ export default function TaskList() {
       });
     }
     setSelectedTasks(new Set());
-  };
+  }, [selectedTasks, updateTask]);
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = useCallback(async () => {
     const confirmed = confirm(`Delete ${selectedTasks.size} task(s)? This cannot be undone.`);
     if (!confirmed) return;
 
@@ -84,16 +86,16 @@ export default function TaskList() {
       await deleteTask(taskId);
     }
     setSelectedTasks(new Set());
-  };
+  }, [selectedTasks, deleteTask]);
 
-  const handleBulkMoveToProject = async (projectId: string) => {
+  const handleBulkMoveToProject = useCallback(async (projectId: string) => {
     for (const taskId of selectedTasks) {
       await updateTask(taskId, { 
         projectId: projectId === 'none' ? undefined : projectId 
       } as any); // Type assertion needed for optional field
     }
     setSelectedTasks(new Set());
-  };
+  }, [selectedTasks, updateTask]);
 
   // When a view is selected, apply its settings
   useEffect(() => {
@@ -497,4 +499,6 @@ export default function TaskList() {
       )}
     </div>
   );
-}
+});
+
+export default TaskList;

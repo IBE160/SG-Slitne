@@ -1,7 +1,7 @@
 // EPIC-9: Projects & Task Organization
 // Purpose: Manage projects with CRUD operations and progress tracking
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getAllProjects, createProject, updateProject, deleteProject, getProjectStats, Project } from '../services/db';
 
 interface ProjectWithStats extends Project {
@@ -13,14 +13,14 @@ interface ProjectWithStats extends Project {
   };
 }
 
-export default function ProjectList() {
+const ProjectList = React.memo(function ProjectList() {
   const [projects, setProjects] = useState<ProjectWithStats[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [formData, setFormData] = useState({ name: '', description: '', color: '#3B82F6' });
 
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     const allProjects = await getAllProjects();
     
     // Load stats for each project
@@ -32,13 +32,13 @@ export default function ProjectList() {
     );
     
     setProjects(projectsWithStats);
-  };
+  }, []);
 
   useEffect(() => {
     loadProjects();
-  }, []);
+  }, [loadProjects]);
 
-  const handleCreate = async () => {
+  const handleCreate = useCallback(async () => {
     if (!formData.name.trim()) return;
     
     await createProject({
@@ -49,10 +49,10 @@ export default function ProjectList() {
     
     setFormData({ name: '', description: '', color: '#3B82F6' });
     setIsCreating(false);
-    loadProjects();
-  };
+    await loadProjects();
+  }, [formData, loadProjects]);
 
-  const handleUpdate = async (id: string) => {
+  const handleUpdate = useCallback(async (id: string) => {
     if (!formData.name.trim()) return;
     
     await updateProject(id, {
@@ -63,17 +63,17 @@ export default function ProjectList() {
     
     setFormData({ name: '', description: '', color: '#3B82F6' });
     setEditingId(null);
-    loadProjects();
-  };
+    await loadProjects();
+  }, [formData, loadProjects]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!confirm('Delete this project? Tasks will be unassigned.')) return;
     
     await deleteProject(id);
-    loadProjects();
-  };
+    await loadProjects();
+  }, [loadProjects]);
 
-  const handleEdit = (project: Project) => {
+  const handleEdit = useCallback((project: Project) => {
     setEditingId(project.id);
     setFormData({
       name: project.name,
@@ -81,13 +81,13 @@ export default function ProjectList() {
       color: project.color || '#3B82F6',
     });
     setIsCreating(false);
-  };
+  }, []);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setIsCreating(false);
     setEditingId(null);
     setFormData({ name: '', description: '', color: '#3B82F6' });
-  };
+  }, []);
 
   // Calculate overall statistics
   const overallStats = projects.reduce(
@@ -332,7 +332,9 @@ export default function ProjectList() {
         ))}
       </div>
       </>
-      )}
+      )}      
     </div>
   );
-}
+});
+
+export default ProjectList;

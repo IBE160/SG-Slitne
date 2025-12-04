@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useTaskStore } from '../stores';
 import type { Task } from '../services/db';
@@ -6,7 +6,7 @@ import { suggestLabels, type LabelSuggestion } from '../services/ai-engine';
 import { trackEvent } from '../services/telemetry';
 import { getAllProjects, type Project } from '../services/db';
 
-export default function AddTaskForm() {
+const AddTaskForm = React.memo(function AddTaskForm() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<1 | 2 | 3>(2);
@@ -68,7 +68,7 @@ export default function AddTaskForm() {
     }
   }, [title, description, priority, selectedLabels, aiAnalysisEnabled, telemetryEnabled]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title.trim()) return;
@@ -109,9 +109,9 @@ export default function AddTaskForm() {
       console.error('Failed to add task:', error);
       alert('Failed to add task. Please try again.');
     }
-  };
+  }, [title, description, priority, selectedLabels, dueDate, projectId, addTask]);
 
-  const handleLabelClick = (label: string) => {
+  const handleLabelClick = useCallback((label: string) => {
     if (selectedLabels.includes(label)) {
       setSelectedLabels(selectedLabels.filter(l => l !== label));
       // Track rejection
@@ -134,7 +134,7 @@ export default function AddTaskForm() {
         });
       }
     }
-  };
+  }, [selectedLabels, suggestedLabels, telemetryEnabled]);
 
   if (!showForm) {
     return (
@@ -314,4 +314,6 @@ export default function AddTaskForm() {
       </div>
     </form>
   );
-}
+});
+
+export default AddTaskForm;

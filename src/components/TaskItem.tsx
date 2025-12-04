@@ -9,7 +9,7 @@ interface TaskItemProps {
   task: Task;
 }
 
-export default function TaskItem({ task }: TaskItemProps) {
+const TaskItem = React.memo(function TaskItem({ task }: TaskItemProps) {
   const { updateTask, deleteTask } = useTaskStore();
   const aiAnalysisEnabled = useTaskStore((s) => s.aiAnalysisEnabled);
   const offline = useMemo(() => isOffline(), []);
@@ -161,4 +161,6 @@ export default function TaskItem({ task }: TaskItemProps) {
       </div>
     </div>
   );
-}
+});
+
+export default TaskItem;
