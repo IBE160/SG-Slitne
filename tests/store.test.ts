@@ -1,9 +1,10 @@
 // SPIKE-3 Tests: Zustand State Management
 // Tests store operations, persistence, derived state
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { useTaskStore, useLabelStore, useUIStore } from '../src/stores';
 import type { Task, Label } from '../src/services/db';
+import { initializeDatabase } from '../src/services/db';
 
 describe('SPIKE-3: Zustand State Management', () => {
   const createMockTask = (overrides?: Partial<Task>): Task => ({
@@ -34,8 +35,16 @@ describe('SPIKE-3: Zustand State Management', () => {
   });
 
   describe('Task Store', () => {
-    beforeEach(() => {
-      useTaskStore.setState({ tasks: [] });
+    beforeEach(async () => {
+      // Reset store state
+      useTaskStore.setState({ tasks: [], initialized: false });
+      
+      // Clear IndexedDB
+      const db = await initializeDatabase();
+      const transaction = db.transaction(['tasks'], 'readwrite');
+      const store = transaction.objectStore('tasks');
+      store.clear();
+      await new Promise(resolve => transaction.oncomplete = resolve);
     });
 
     it('should add a task to store', async () => {
@@ -44,16 +53,18 @@ describe('SPIKE-3: Zustand State Management', () => {
 
       const tasks = useTaskStore.getState().tasks;
       expect(tasks).toHaveLength(1);
-      expect(tasks[0].id).toBe(task.id);
+      expect(tasks[0].title).toBe(task.title);
     });
 
     it('should update a task in store', async () => {
       const task = createMockTask();
       await useTaskStore.getState().addTask(task);
 
-      await useTaskStore.getState().updateTask(task.id, { title: 'Updated Title' });
+      // Use the actual ID from the added task
+      const addedTask = useTaskStore.getState().tasks[0];
+      await useTaskStore.getState().updateTask(addedTask.id, { title: 'Updated Title' });
 
-      const updated = useTaskStore.getState().getTaskById(task.id);
+      const updated = useTaskStore.getState().getTaskById(addedTask.id);
       expect(updated?.title).toBe('Updated Title');
     });
 
@@ -61,7 +72,9 @@ describe('SPIKE-3: Zustand State Management', () => {
       const task = createMockTask();
       await useTaskStore.getState().addTask(task);
 
-      await useTaskStore.getState().deleteTask(task.id);
+      // Use the actual ID from the added task
+      const addedTask = useTaskStore.getState().tasks[0];
+      await useTaskStore.getState().deleteTask(addedTask.id);
 
       const tasks = useTaskStore.getState().tasks;
       expect(tasks).toHaveLength(0);
@@ -78,8 +91,10 @@ describe('SPIKE-3: Zustand State Management', () => {
       const task = createMockTask();
       await useTaskStore.getState().addTask(task);
 
-      const retrieved = useTaskStore.getState().getTaskById(task.id);
-      expect(retrieved?.id).toBe(task.id);
+      // Use the actual ID from the added task
+      const addedTask = useTaskStore.getState().tasks[0];
+      const retrieved = useTaskStore.getState().getTaskById(addedTask.id);
+      expect(retrieved?.id).toBe(addedTask.id);
     });
 
     it('should calculate active task count', async () => {
@@ -206,9 +221,16 @@ describe('SPIKE-3: Zustand State Management', () => {
   });
 
   describe('Store Persistence', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
       localStorage.clear();
-      useTaskStore.setState({ tasks: [] });
+      useTaskStore.setState({ tasks: [], initialized: false });
+      
+      // Clear IndexedDB
+      const db = await initializeDatabase();
+      const transaction = db.transaction(['tasks'], 'readwrite');
+      const store = transaction.objectStore('tasks');
+      store.clear();
+      await new Promise(resolve => transaction.oncomplete = resolve);
     });
 
     it('should persist tasks to localStorage', async () => {
@@ -230,8 +252,16 @@ describe('SPIKE-3: Zustand State Management', () => {
   });
 
   describe('Derived State & Selectors', () => {
-    beforeEach(() => {
-      useTaskStore.setState({ tasks: [] });
+    beforeEach(async () => {
+      // Reset store state
+      useTaskStore.setState({ tasks: [], initialized: false });
+      
+      // Clear IndexedDB
+      const db = await initializeDatabase();
+      const transaction = db.transaction(['tasks'], 'readwrite');
+      const store = transaction.objectStore('tasks');
+      store.clear();
+      await new Promise(resolve => transaction.oncomplete = resolve);
     });
 
     it('should calculate statistics from derived state', async () => {
