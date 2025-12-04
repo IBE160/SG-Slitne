@@ -105,6 +105,14 @@ export async function initializeDatabase(): Promise<IDBDatabase> {
       // Create projects store
       if (!db.objectStoreNames.contains('projects')) {
         const projectStore = db.createObjectStore('projects', { keyPath: 'id' });
+        projectStore.createIndex('name', 'name', { unique: true });
+      }
+    };
+  });
+}
+
+// ===== TASK CRUD OPERATIONS =====
+
 /**
  * Create a new task in the database
  * Automatically generates UUID and timestamps
@@ -115,14 +123,6 @@ export async function initializeDatabase(): Promise<IDBDatabase> {
  * @example
  * const task = await createTask({ title: 'Buy milk', priority: 2 });
  */
-export async function createTask(taskData: Partial<Task>): Promise<Task> {
-      }
-    };
-  });
-}
-
-// ===== TASK CRUD OPERATIONS =====
-
 export async function createTask(taskData: Partial<Task>): Promise<Task> {
   const db = await initializeDatabase();
   const transaction = db.transaction(['tasks'], 'readwrite');

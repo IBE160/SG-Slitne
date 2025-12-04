@@ -137,10 +137,6 @@ export function clearSyncQueue(): void {
   setSyncQueue([]);
 }
 
-export function getPendingSyncCount(): number {
-  return getSyncQueue().filter((item) => item.status === 'pending').length;
-}
-
 export function getRetryingSyncCount(): number {
   return getSyncQueue().filter((item) => {
     return item.status === 'pending' && (item.retryCount || 0) > 0;
