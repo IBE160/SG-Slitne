@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTaskStore } from './stores';
 import TaskList from './components/TaskList';
 import Settings from './components/Settings';
 import AddTaskForm from './components/AddTaskForm';
+import { ToastContainer, Toast } from './components/ToastNotification';
 import { isOffline, getPendingSyncCount, flushPendingSync } from './services/offline';
+import { addSyncHistoryEntry } from './services/sync-history';
 
 function App() {
   const tasks = useTaskStore((state) => state.tasks);
@@ -15,6 +17,7 @@ function App() {
 
   const [offline, setOffline] = useState(isOffline());
   const [pendingSync, setPendingSync] = useState<number>(0);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   useEffect(() => {
     const updateStatus = () => {
@@ -36,8 +39,67 @@ function App() {
   const cloudModeEnabled = useTaskStore((s) => s.cloudModeEnabled);
   useEffect(() => {
     const onOnline = async () => {
-      if (cloudModeEnabled) {
-        await flushPendingSync({ cloudEnabled: true });
+      if (cloudModeEnabled && getPendingSyncCount() > 0) {
+        // Show syncing toast
+        const syncingToast: Toast = {
+          id: `sync-${Date.now()}`,
+          message: 'Syncing pending changes...',
+          type: 'info',
+          duration: 0, // Don't auto-dismiss
+        };
+        setToasts(prev => [...prev, syncingToast]);
+        
+        const startTime = Date.now();
+        const result = await flushPendingSync({ cloudEnabled: true });
+        const duration = Date.now() - startTime;
+        
+        // Remove syncing toast
+        setToasts(prev => prev.filter(t => t.id !== syncingToast.id));
+        
+        // Log to history
+        const status = result.failed === 0 ? 'success' : 
+                       result.processed > 0 ? 'partial' : 'failed';
+        addSyncHistoryEntry({
+          operation: 'auto_sync',
+          status,
+          itemsProcessed: result.processed,
+          itemsFailed: result.failed,
+          itemsRetrying: result.retrying,
+          permanentFailures: result.permanent_failures,
+          duration,
+        });
+        
+        // Show result toast
+        if (result.processed > 0) {
+          const successToast: Toast = {
+            id: `sync-success-${Date.now()}`,
+            message: `Synced ${result.processed} change(s) successfully!`,
+            type: 'success',
+            duration: 3000,
+          };
+          setToasts(prev => [...prev, successToast]);
+        }
+        
+        if (result.retrying > 0) {
+          const retryToast: Toast = {
+            id: `sync-retry-${Date.now()}`,
+            message: `${result.retrying} item(s) will retry later`,
+            type: 'warning',
+            duration: 5000,
+          };
+          setToasts(prev => [...prev, retryToast]);
+        }
+        
+        if (result.permanent_failures > 0) {
+          const failedToast: Toast = {
+            id: `sync-failed-${Date.now()}`,
+            message: `${result.permanent_failures} item(s) failed permanently. Check Settings > Sync History.`,
+            type: 'error',
+            duration: 0, // Keep until dismissed
+          };
+          setToasts(prev => [...prev, failedToast]);
+        }
+        
         setPendingSync(getPendingSyncCount());
       }
     };
@@ -144,6 +206,12 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {/* Toast Notifications */}
+      <ToastContainer 
+        toasts={toasts} 
+        onDismiss={(id) => setToasts(prev => prev.filter(t => t.id !== id))}
+      />
     </div>
   );
 }

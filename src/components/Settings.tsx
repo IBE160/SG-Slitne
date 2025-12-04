@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTaskStore } from "../stores";
-import { getPendingSyncCount, flushPendingSync, clearSyncQueue } from "../services/offline";
+import { getPendingSyncCount, getRetryingSyncCount, getFailedSyncCount, flushPendingSync, clearSyncQueue } from "../services/offline";
 import { getPendingEventCount, getEventsSummary, uploadEvents, clearEvents } from "../services/telemetry";
+import { addSyncHistoryEntry, getLastSuccessfulSync, getRecentHistory, getSyncStats } from "../services/sync-history";
 
 export default function Settings() {
   const aiAnalysisEnabled = useTaskStore((s) => s.aiAnalysisEnabled);
@@ -13,6 +14,9 @@ export default function Settings() {
 
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState<number>(0);
+  const [retrying, setRetrying] = useState<number>(0);
+  const [failed, setFailed] = useState<number>(0);
+  const [showHistory, setShowHistory] = useState(false);
   const [pendingEvents, setPendingEvents] = useState<number>(0);
   const [eventsSummary, setEventsSummary] = useState({
     suggestionsShown: 0,
@@ -27,6 +31,8 @@ export default function Settings() {
     window.addEventListener("hashchange", onHash);
     const interval = setInterval(() => {
       setPending(getPendingSyncCount());
+      setRetrying(getRetryingSyncCount());
+      setFailed(getFailedSyncCount());
       setPendingEvents(getPendingEventCount());
       const summary = getEventsSummary();
       setEventsSummary({
@@ -36,6 +42,8 @@ export default function Settings() {
       });
     }, 3000);
     setPending(getPendingSyncCount());
+    setRetrying(getRetryingSyncCount());
+    setFailed(getFailedSyncCount());
     setPendingEvents(getPendingEventCount());
     const summary = getEventsSummary();
     setEventsSummary({
@@ -138,7 +146,11 @@ export default function Settings() {
             <div className="flex items-center justify-between gap-3 pt-2 border-t mt-2">
               <div className="text-sm text-gray-700">
                 Sync Queue
-                <div className="text-xs text-gray-600">Pending: {pending}</div>
+                <div className="text-xs text-gray-600">
+                  Pending: {pending}
+                  {retrying > 0 && <> • Retrying: {retrying}</>}
+                  {failed > 0 && <> • Failed: <span className="text-red-600">{failed}</span></>}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -146,8 +158,26 @@ export default function Settings() {
                   className="px-3 py-1.5 text-sm rounded-md border bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-50 transition-colors"
                   onClick={async () => {
                     if (!cloudModeEnabled) return;
-                    await flushPendingSync({ cloudEnabled: true });
+                    const startTime = Date.now();
+                    const result = await flushPendingSync({ cloudEnabled: true });
+                    const duration = Date.now() - startTime;
+                    
+                    // Log to history
+                    const status = result.failed === 0 ? 'success' : 
+                                   result.processed > 0 ? 'partial' : 'failed';
+                    addSyncHistoryEntry({
+                      operation: 'manual_sync',
+                      status,
+                      itemsProcessed: result.processed,
+                      itemsFailed: result.failed,
+                      itemsRetrying: result.retrying,
+                      permanentFailures: result.permanent_failures,
+                      duration,
+                    });
+                    
                     setPending(getPendingSyncCount());
+                    setRetrying(getRetryingSyncCount());
+                    setFailed(getFailedSyncCount());
                   }}
                   disabled={!cloudModeEnabled || pending === 0}
                   aria-label="Sync pending changes to cloud"
@@ -159,8 +189,16 @@ export default function Settings() {
                   className="px-3 py-1.5 text-sm rounded-md border bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1 disabled:opacity-50 transition-colors"
                   onClick={() => {
                     if (!confirm('Clear all queued sync items?')) return;
+                    addSyncHistoryEntry({
+                      operation: 'clear_queue',
+                      status: 'success',
+                      itemsProcessed: pending,
+                      itemsFailed: 0,
+                    });
                     clearSyncQueue();
                     setPending(getPendingSyncCount());
+                    setRetrying(getRetryingSyncCount());
+                    setFailed(getFailedSyncCount());
                   }}
                   disabled={pending === 0}
                   aria-label="Clear all queued sync items"
@@ -168,6 +206,101 @@ export default function Settings() {
                   Clear queue
                 </button>
               </div>
+            </div>
+
+            {/* Sync Status Dashboard */}
+            <div className="pt-2 border-t mt-2">
+              <button
+                type="button"
+                className="w-full flex items-center justify-between text-sm text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                onClick={() => setShowHistory(!showHistory)}
+                aria-expanded={showHistory}
+                aria-label="Toggle sync history panel"
+              >
+                <span className="font-medium">Sync History & Status</span>
+                <svg className={`w-4 h-4 transition-transform ${showHistory ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {showHistory && (
+                <div className="mt-2 space-y-2 text-xs">
+                  {(() => {
+                    const lastSync = getLastSuccessfulSync();
+                    const stats = getSyncStats();
+                    const recent = getRecentHistory(5);
+                    
+                    return (
+                      <>
+                        <div className="bg-gray-50 rounded p-2 space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Last successful sync:</span>
+                            <span className="font-medium">
+                              {lastSync ? new Date(lastSync.timestamp).toLocaleString() : 'Never'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Total syncs:</span>
+                            <span className="font-medium">{stats.totalSyncs}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Success rate:</span>
+                            <span className="font-medium">{stats.successRate.toFixed(1)}%</span>
+                          </div>
+                          {stats.averageDuration > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Avg duration:</span>
+                              <span className="font-medium">{stats.averageDuration.toFixed(0)}ms</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {recent.length > 0 && (
+                          <div className="space-y-1">
+                            <div className="font-medium text-gray-700">Recent Activity:</div>
+                            {recent.map((entry) => (
+                              <div key={entry.id} className="bg-gray-50 rounded p-2 space-y-0.5">
+                                <div className="flex justify-between items-center">
+                                  <span className="font-medium">
+                                    {entry.operation === 'manual_sync' ? '📤 Manual Sync' :
+                                     entry.operation === 'auto_sync' ? '🔄 Auto Sync' :
+                                     entry.operation === 'retry' ? '🔁 Retry' :
+                                     '🗑️ Clear Queue'}
+                                  </span>
+                                  <span className={`px-1.5 py-0.5 rounded text-xs ${
+                                    entry.status === 'success' ? 'bg-green-100 text-green-800' :
+                                    entry.status === 'partial' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                                  }`}>
+                                    {entry.status}
+                                  </span>
+                                </div>
+                                <div className="text-gray-600">
+                                  {new Date(entry.timestamp).toLocaleString()}
+                                </div>
+                                <div className="text-gray-600">
+                                  Processed: {entry.itemsProcessed} • Failed: {entry.itemsFailed}
+                                  {entry.itemsRetrying !== undefined && entry.itemsRetrying > 0 && (
+                                    <> • Retrying: {entry.itemsRetrying}</>
+                                  )}
+                                  {entry.permanentFailures !== undefined && entry.permanentFailures > 0 && (
+                                    <> • Permanent: <span className="text-red-600">{entry.permanentFailures}</span></>
+                                  )}
+                                </div>
+                                {entry.errorMessage && (
+                                  <div className="text-red-600 text-xs mt-1">
+                                    Error: {entry.errorMessage}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
 
             {telemetryEnabled && (

@@ -12,10 +12,45 @@ export interface SyncQueueItem {
   timestamp: string;
   status: 'pending' | 'synced' | 'failed';
   lastWriteWins?: boolean; // for simple conflict handling
+  retryCount?: number; // number of retry attempts
+  lastAttemptTimestamp?: string; // ISO timestamp of last sync attempt
+  error?: string; // last error message
 }
 
 const SYNC_QUEUE_KEY = 'sync-queue-v1';
 const OFFLINE_MODE_KEY = 'offline-mode';
+
+// Retry configuration
+const MAX_RETRY_COUNT = 5;
+const BASE_BACKOFF_MS = 1000; // Start with 1 second
+const MAX_BACKOFF_MS = 60000; // Cap at 60 seconds
+
+// Calculate exponential backoff with jitter
+function calculateBackoff(retryCount: number): number {
+  const exponentialBackoff = Math.min(
+    BASE_BACKOFF_MS * Math.pow(2, retryCount),
+    MAX_BACKOFF_MS
+  );
+  // Add jitter (±25% random variation)
+  const jitter = exponentialBackoff * 0.25 * (Math.random() * 2 - 1);
+  return Math.floor(exponentialBackoff + jitter);
+}
+
+// Check if item should be retried based on retry count and backoff delay
+function shouldRetryItem(item: SyncQueueItem): boolean {
+  if (item.status === 'synced') return false;
+  
+  const retryCount = item.retryCount || 0;
+  if (retryCount >= MAX_RETRY_COUNT) return false;
+
+  if (!item.lastAttemptTimestamp) return true; // First attempt
+
+  const lastAttempt = new Date(item.lastAttemptTimestamp).getTime();
+  const backoffDelay = calculateBackoff(retryCount);
+  const now = Date.now();
+  
+  return now - lastAttempt >= backoffDelay;
+}
 
 // ===== OFFLINE STATE =====
 
@@ -51,6 +86,7 @@ export function addToSyncQueue(item: Omit<SyncQueueItem, 'id' | 'timestamp' | 's
     timestamp: new Date().toISOString(),
     status: 'pending',
     lastWriteWins: true,
+    retryCount: 0,
   };
   queue.push(newItem);
   setSyncQueue(queue);
@@ -74,6 +110,18 @@ export function getPendingSyncCount(): number {
   return getSyncQueue().filter((item) => item.status === 'pending').length;
 }
 
+export function getRetryingSyncCount(): number {
+  return getSyncQueue().filter((item) => {
+    return item.status === 'pending' && (item.retryCount || 0) > 0;
+  }).length;
+}
+
+export function getFailedSyncCount(): number {
+  return getSyncQueue().filter((item) => {
+    return item.status === 'failed' || (item.retryCount || 0) >= MAX_RETRY_COUNT;
+  }).length;
+}
+
 // ===== CLOUD SYNC STUB =====
 
 export interface CloudSyncOptions {
@@ -83,27 +131,79 @@ export interface CloudSyncOptions {
 
 async function sendToCloud(item: SyncQueueItem, options: CloudSyncOptions): Promise<'synced' | 'failed'> {
   if (!options.cloudEnabled) return 'failed';
-  // Placeholder: simulate network call and success
-  await new Promise((res) => setTimeout(res, 100));
+  
+  // Placeholder: simulate network call with realistic timing
+  await new Promise((res) => setTimeout(res, 100 + Math.random() * 200));
+  
+  // Simulate occasional failures for testing retry logic
+  const failureRate = 0.1; // 10% failure rate
+  if (Math.random() < failureRate) {
+    throw new Error('Network error: Connection timeout');
+  }
+  
   return 'synced';
 }
 
-export async function flushPendingSync(options: CloudSyncOptions): Promise<{ processed: number; failed: number }> {
+export async function flushPendingSync(options: CloudSyncOptions): Promise<{ 
+  processed: number; 
+  failed: number; 
+  retrying: number;
+  permanent_failures: number;
+}> {
   const queue = getSyncQueue();
   let processed = 0;
   let failed = 0;
+  let retrying = 0;
+  let permanent_failures = 0;
+  
   for (const item of queue) {
-    if (item.status !== 'pending') continue;
+    // Skip if not ready for retry
+    if (!shouldRetryItem(item)) {
+      if ((item.retryCount || 0) >= MAX_RETRY_COUNT) {
+        permanent_failures += 1;
+      } else if ((item.retryCount || 0) > 0) {
+        retrying += 1; // Still waiting for backoff
+      }
+      continue;
+    }
+    
+    const retryCount = (item.retryCount || 0) + 1;
+    
     try {
       const result = await sendToCloud(item, options);
-      updateSyncQueueItem(item.id, { status: result });
+      updateSyncQueueItem(item.id, { 
+        status: result,
+        retryCount,
+        lastAttemptTimestamp: new Date().toISOString(),
+      });
       processed += 1;
-    } catch {
-      updateSyncQueueItem(item.id, { status: 'failed' });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (retryCount >= MAX_RETRY_COUNT) {
+        // Permanent failure after max retries
+        updateSyncQueueItem(item.id, { 
+          status: 'failed',
+          retryCount,
+          lastAttemptTimestamp: new Date().toISOString(),
+          error: errorMessage,
+        });
+        permanent_failures += 1;
+      } else {
+        // Temporary failure, will retry
+        updateSyncQueueItem(item.id, { 
+          status: 'pending',
+          retryCount,
+          lastAttemptTimestamp: new Date().toISOString(),
+          error: errorMessage,
+        });
+        retrying += 1;
+      }
       failed += 1;
     }
   }
-  return { processed, failed };
+  
+  return { processed, failed, retrying, permanent_failures };
 }
 
 // Convenience wrappers to enqueue operations when offline
