@@ -21,15 +21,21 @@ export default function AddTaskForm() {
   const aiAnalysisEnabled = useTaskStore((state) => state.aiAnalysisEnabled);
   const telemetryEnabled = useTaskStore((state) => state.telemetryEnabled);
 
-  // Load projects
-  useEffect(() => {
-    loadProjects();
-  }, []);
-
   const loadProjects = async () => {
     const allProjects = await getAllProjects();
     setProjects(allProjects.filter(p => p.status === 'active'));
   };
+
+  // Load projects when component mounts and when form is shown
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  useEffect(() => {
+    if (showForm) {
+      loadProjects(); // Reload projects when form opens
+    }
+  }, [showForm]);
 
   // Generate AI label suggestions when title/description changes
   useEffect(() => {
