@@ -19,6 +19,10 @@ function App() {
   const [offline, setOffline] = useState(isOffline());
   const [pendingSync, setPendingSync] = useState<number>(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  // Log initialization status
+  console.log('App render - initialized:', initialized, 'loading:', loading, 'tasks:', tasks.length);
 
   useEffect(() => {
     const updateStatus = () => {
@@ -109,7 +113,11 @@ function App() {
   }, [cloudModeEnabled]);
 
   useEffect(() => {
-    initializeTasks();
+    console.log('Starting app initialization...');
+    initializeTasks().catch(err => {
+      console.error('Failed to initialize tasks:', err);
+      setError(err instanceof Error ? err.message : String(err));
+    });
     
     // Timeout fallback - if initialization takes too long, mark as initialized anyway
     const timeoutId = setTimeout(() => {
@@ -117,12 +125,31 @@ function App() {
         console.warn('Database initialization timeout - using fallback');
         useTaskStore.getState().initializeTasks().catch(err => {
           console.error('Failed to initialize database:', err);
+          setError('Database initialization timeout');
         });
       }
-    }, 3000); // 3 second timeout
+    }, 5000); // 5 second timeout
     
     return () => clearTimeout(timeoutId);
   }, [initializeTasks]);
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6">
+          <h1 className="text-2xl font-bold text-red-600 mb-2">Initialization Error</h1>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     // Initialize preset views
