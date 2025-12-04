@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "deploy:vercel": "npx vercel --prod",
     "deploy:netlify": "npx netlify deploy --prod --dir=dist"
   },
