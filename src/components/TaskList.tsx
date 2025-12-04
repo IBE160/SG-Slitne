@@ -93,47 +93,6 @@ export default function TaskList() {
     return sorted;
   }, [tasks, sortBy, filterPriority, filterProject, searchQuery]);
 
-  if (displayedTasks.length === 0) {
-    return (
-      <div className="space-y-4">
-        {/* Search Bar */}
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search tasks..."
-            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-          <svg
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
-
-        <div className="text-center py-12 text-gray-500">
-          <p className="text-lg mb-2">No tasks found</p>
-          <p className="text-sm">
-            {searchQuery.trim()
-              ? 'No tasks match your search'
-              : filterPriority !== 'all' || filterProject !== 'all'
-              ? 'Try adjusting your filters'
-              : 'Add your first task to get started!'}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       {/* View Selector */}
@@ -367,12 +326,25 @@ export default function TaskList() {
         Showing {displayedTasks.length} task{displayedTasks.length !== 1 ? 's' : ''}
       </div>
 
-      {/* Task List */}
-      <div className="space-y-2">
-        {displayedTasks.map((task) => (
-          <TaskItem key={task.id} task={task} />
-        ))}
-      </div>
+      {/* Task List or Empty State */}
+      {displayedTasks.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          <p className="text-lg mb-2">No tasks found</p>
+          <p className="text-sm">
+            {searchQuery.trim()
+              ? 'No tasks match your search'
+              : filterPriority !== 'all' || filterProject !== 'all'
+              ? 'Try adjusting your filters'
+              : 'Add your first task to get started!'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {displayedTasks.map((task) => (
+            <TaskItem key={task.id} task={task} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
