@@ -4,19 +4,32 @@ import { useTaskStore } from '../stores';
 import type { Task } from '../services/db';
 import { suggestLabels, type LabelSuggestion } from '../services/ai-engine';
 import { trackEvent } from '../services/telemetry';
+import { getAllProjects, type Project } from '../services/db';
 
 export default function AddTaskForm() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<1 | 2 | 3>(2);
   const [dueDate, setDueDate] = useState('');
+  const [projectId, setProjectId] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [suggestedLabels, setSuggestedLabels] = useState<LabelSuggestion[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   const addTask = useTaskStore((state) => state.addTask);
   const aiAnalysisEnabled = useTaskStore((state) => state.aiAnalysisEnabled);
   const telemetryEnabled = useTaskStore((state) => state.telemetryEnabled);
+
+  // Load projects
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const loadProjects = async () => {
+    const allProjects = await getAllProjects();
+    setProjects(allProjects.filter(p => p.status === 'active'));
+  };
 
   // Generate AI label suggestions when title/description changes
   useEffect(() => {
@@ -62,6 +75,14 @@ export default function AddTaskForm() {
       status: 'active',
       labels: selectedLabels,
       dueDate: dueDate || undefined,
+      projectId: projectId || undefined,
+      summary: '',
+      aiMetadata: {
+        labelConfidence: [],
+        priorityScore: priority,
+        summarizedAt: new Date().toISOString(),
+        userFeedback: null,
+      },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -74,6 +95,7 @@ export default function AddTaskForm() {
       setDescription('');
       setPriority(2);
       setDueDate('');
+      setProjectId('');
       setSelectedLabels([]);
       setSuggestedLabels([]);
       setShowForm(false);
@@ -152,6 +174,56 @@ export default function AddTaskForm() {
         />
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
+            Priority
+          </label>
+          <select
+            id="priority"
+            value={priority}
+            onChange={(e) => setPriority(Number(e.target.value) as 1 | 2 | 3)}
+            className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value={1}>Low</option>
+            <option value={2}>Medium</option>
+            <option value={3}>High</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="project" className="block text-sm font-medium text-gray-700 mb-1">
+            Project
+          </label>
+          <select
+            id="project"
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value)}
+            className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">No Project</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
+          Due Date
+        </label>
+        <input
+          type="date"
+          id="dueDate"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+
       {/* AI Label Suggestions */}
       {aiAnalysisEnabled && suggestedLabels.length > 0 && (
         <div>
@@ -208,37 +280,6 @@ export default function AddTaskForm() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
-            Priority
-          </label>
-          <select
-            id="priority"
-            value={priority}
-            onChange={(e) => setPriority(Number(e.target.value) as 1 | 2 | 3)}
-            className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value={1}>Low</option>
-            <option value={2}>Medium</option>
-            <option value={3}>High</option>
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
-            Due Date
-          </label>
-          <input
-            type="date"
-            id="dueDate"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-      </div>
-
       <div className="flex flex-col sm:flex-row gap-2 pt-2">
         <button
           type="submit"
@@ -255,11 +296,12 @@ export default function AddTaskForm() {
             setDescription('');
             setPriority(2);
             setDueDate('');
+            setProjectId('');
             setSelectedLabels([]);
             setSuggestedLabels([]);
           }}
-          className="px-4 py-2 text-sm sm:text-base text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-          aria-label="Cancel and close task form"
+          className="flex-1 bg-white text-gray-700 py-2 px-4 rounded-md text-sm sm:text-base font-medium border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+          aria-label="Cancel adding task"
         >
           Cancel
         </button>

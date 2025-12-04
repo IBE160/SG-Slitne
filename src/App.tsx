@@ -3,6 +3,7 @@ import { useTaskStore } from './stores';
 import TaskList from './components/TaskList';
 import Settings from './components/Settings';
 import AddTaskForm from './components/AddTaskForm';
+import ProjectList from './components/ProjectList';
 import { ToastContainer, Toast } from './components/ToastNotification';
 import { isOffline, getPendingSyncCount, flushPendingSync } from './services/offline';
 import { addSyncHistoryEntry } from './services/sync-history';
@@ -190,6 +191,7 @@ function App() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8 pb-20 sm:pb-24" role="main" aria-label="Task list and controls">
         <div className="space-y-4 sm:space-y-6">
           <Settings />
+          <ProjectList />
           <AddTaskForm />
           <TaskList />
         </div>

@@ -386,6 +386,164 @@ export async function deleteLabel(id: string): Promise<void> {
   });
 }
 
+// ===== PROJECT CRUD OPERATIONS =====
+
+export async function createProject(projectData: Partial<Project>): Promise<Project> {
+  const db = await initializeDatabase();
+  const transaction = db.transaction(['projects'], 'readwrite');
+  const projectStore = transaction.objectStore('projects');
+
+  const project: Project = {
+    id: uuidv4(),
+    name: projectData.name || 'Untitled Project',
+    description: projectData.description || '',
+    color: projectData.color || '#3B82F6', // Default blue
+    status: projectData.status || 'active',
+    taskCount: 0,
+    createdAt: new Date().toISOString(),
+  };
+
+  return new Promise((resolve, reject) => {
+    const request = projectStore.add(project);
+    request.onsuccess = () => resolve(project);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export async function getProjectById(id: string): Promise<Project | null> {
+  const db = await initializeDatabase();
+  const transaction = db.transaction(['projects'], 'readonly');
+  const projectStore = transaction.objectStore('projects');
+
+  return new Promise((resolve, reject) => {
+    const request = projectStore.get(id);
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export async function getAllProjects(): Promise<Project[]> {
+  const db = await initializeDatabase();
+  const transaction = db.transaction(['projects'], 'readonly');
+  const projectStore = transaction.objectStore('projects');
+
+  return new Promise((resolve, reject) => {
+    const request = projectStore.getAll();
+    request.onsuccess = () => {
+      const projects = request.result || [];
+      resolve(projects);
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export async function updateProject(id: string, updates: Partial<Project>): Promise<Project> {
+  const db = await initializeDatabase();
+  const transaction = db.transaction(['projects'], 'readwrite');
+  const projectStore = transaction.objectStore('projects');
+
+  return new Promise((resolve, reject) => {
+    const getRequest = projectStore.get(id);
+    getRequest.onsuccess = () => {
+      const project = getRequest.result;
+      if (!project) {
+        reject(new Error('Project not found'));
+        return;
+      }
+
+      const updatedProject: Project = {
+        ...project,
+        ...updates,
+        id,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const putRequest = projectStore.put(updatedProject);
+      putRequest.onsuccess = () => resolve(updatedProject);
+      putRequest.onerror = () => reject(putRequest.error);
+    };
+    getRequest.onerror = () => reject(getRequest.error);
+  });
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  const db = await initializeDatabase();
+  const transaction = db.transaction(['projects', 'tasks'], 'readwrite');
+  const projectStore = transaction.objectStore('projects');
+  const taskStore = transaction.objectStore('tasks');
+
+  // First, unassign tasks from this project
+  const tasksRequest = taskStore.index('projectId').getAll(id);
+  
+  return new Promise((resolve, reject) => {
+    tasksRequest.onsuccess = () => {
+      const tasks = tasksRequest.result || [];
+      
+      // Update all tasks to remove projectId
+      const updatePromises = tasks.map((task) => {
+        const updatedTask = { ...task, projectId: undefined };
+        return new Promise<void>((res, rej) => {
+          const updateRequest = taskStore.put(updatedTask);
+          updateRequest.onsuccess = () => res();
+          updateRequest.onerror = () => rej(updateRequest.error);
+        });
+      });
+
+      Promise.all(updatePromises)
+        .then(() => {
+          // Now delete the project
+          const deleteRequest = projectStore.delete(id);
+          deleteRequest.onsuccess = () => resolve();
+          deleteRequest.onerror = () => reject(deleteRequest.error);
+        })
+        .catch(reject);
+    };
+    tasksRequest.onerror = () => reject(tasksRequest.error);
+  });
+}
+
+export async function getProjectTaskCount(projectId: string): Promise<number> {
+  const db = await initializeDatabase();
+  const transaction = db.transaction(['tasks'], 'readonly');
+  const taskStore = transaction.objectStore('tasks');
+
+  return new Promise((resolve, reject) => {
+    const index = taskStore.index('projectId');
+    const request = index.getAll(projectId);
+    request.onsuccess = () => {
+      const tasks = request.result || [];
+      resolve(tasks.filter(t => t.status === 'active').length);
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export async function getProjectStats(projectId: string): Promise<{
+  total: number;
+  active: number;
+  completed: number;
+  completionRate: number;
+}> {
+  const db = await initializeDatabase();
+  const transaction = db.transaction(['tasks'], 'readonly');
+  const taskStore = transaction.objectStore('tasks');
+
+  return new Promise((resolve, reject) => {
+    const index = taskStore.index('projectId');
+    const request = index.getAll(projectId);
+    request.onsuccess = () => {
+      const tasks = request.result || [];
+      const active = tasks.filter(t => t.status === 'active').length;
+      const completed = tasks.filter(t => t.status === 'completed').length;
+      const total = active + completed;
+      const completionRate = total > 0 ? (completed / total) * 100 : 0;
+      
+      resolve({ total, active, completed, completionRate });
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
 // ===== STATISTICS =====
 
 export async function getTaskStats(): Promise<{

@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import type { Task } from '../services/db';
 import { useTaskStore } from '../stores';
 import { isOffline } from '../services/offline';
 import { generateSummary, scorePriority } from '../services/ai-engine';
+import { getProjectById, type Project } from '../services/db';
 
 interface TaskItemProps {
   task: Task;
@@ -12,6 +13,17 @@ export default function TaskItem({ task }: TaskItemProps) {
   const { updateTask, deleteTask } = useTaskStore();
   const aiAnalysisEnabled = useTaskStore((s) => s.aiAnalysisEnabled);
   const offline = useMemo(() => isOffline(), []);
+  const [project, setProject] = useState<Project | null>(null);
+
+  // Load project info if task has projectId
+  useEffect(() => {
+    if (task.projectId) {
+      getProjectById(task.projectId).then(setProject);
+    } else {
+      setProject(null);
+    }
+  }, [task.projectId]);
+
   const summaryText = useMemo(() => {
     if (!aiAnalysisEnabled) return null;
     const s = generateSummary(task.title, task.description || '');
@@ -86,9 +98,25 @@ export default function TaskItem({ task }: TaskItemProps) {
                   Summary: {summaryText}
                 </p>
               )}
-              {task.labels && task.labels.length > 0 && (
+              {(project || (task.labels && task.labels.length > 0)) && (
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {task.labels.map((label) => (
+                  {project && (
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border"
+                      style={{
+                        backgroundColor: `${project.color}20`,
+                        borderColor: project.color,
+                        color: project.color,
+                      }}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: project.color }}
+                      />
+                      {project.name}
+                    </span>
+                  )}
+                  {task.labels && task.labels.map((label) => (
                     <span
                       key={label}
                       className="inline-block px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full"
