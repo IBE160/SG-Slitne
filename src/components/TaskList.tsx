@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTaskStore } from '../stores';
 import TaskItem from './TaskItem';
-import type { Task, Project } from '../services/db';
+import type { Project } from '../services/db';
 import { getAllProjects } from '../services/db';
 
 type SortOption = 'priority' | 'dueDate' | 'created';
@@ -12,6 +12,7 @@ export default function TaskList() {
   const savedViews = useTaskStore((state) => state.savedViews);
   const currentViewId = useTaskStore((state) => state.currentViewId);
   const setCurrentView = useTaskStore((state) => state.setCurrentView);
+  const { updateTask, deleteTask } = useTaskStore();
   
   const [sortBy, setSortBy] = useState<SortOption>('priority');
   const [filterPriority, setFilterPriority] = useState<FilterOption>('all');
@@ -20,15 +21,78 @@ export default function TaskList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showViewManager, setShowViewManager] = useState(false);
   const [saveViewName, setSaveViewName] = useState('');
-
+  
+  // Bulk operations state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  const [showBulkActions, setShowBulkActions] = useState(false);
   // Load projects
   useEffect(() => {
     loadProjects();
   }, []);
 
+  // Update bulk actions visibility when selection changes
+  useEffect(() => {
+    setShowBulkActions(selectedTasks.size > 0);
+  }, [selectedTasks]);
+
   const loadProjects = async () => {
     const allProjects = await getAllProjects();
     setProjects(allProjects.filter(p => p.status === 'active'));
+  };
+
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedTasks(new Set());
+  };
+
+  const toggleTaskSelection = (taskId: string) => {
+    const newSelection = new Set(selectedTasks);
+    if (newSelection.has(taskId)) {
+      newSelection.delete(taskId);
+    } else {
+      newSelection.add(taskId);
+    }
+    setSelectedTasks(newSelection);
+  };
+
+  const selectAll = () => {
+    setSelectedTasks(new Set(displayedTasks.map(t => t.id)));
+  };
+
+  const deselectAll = () => {
+    setSelectedTasks(new Set());
+  };
+
+  const handleBulkComplete = async () => {
+    const confirmed = confirm(`Mark ${selectedTasks.size} task(s) as complete?`);
+    if (!confirmed) return;
+
+    for (const taskId of selectedTasks) {
+      await updateTask(taskId, {
+        status: 'completed' as const,
+      });
+    }
+    setSelectedTasks(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    const confirmed = confirm(`Delete ${selectedTasks.size} task(s)? This cannot be undone.`);
+    if (!confirmed) return;
+
+    for (const taskId of selectedTasks) {
+      await deleteTask(taskId);
+    }
+    setSelectedTasks(new Set());
+  };
+
+  const handleBulkMoveToProject = async (projectId: string) => {
+    for (const taskId of selectedTasks) {
+      await updateTask(taskId, { 
+        projectId: projectId === 'none' ? undefined : projectId 
+      } as any); // Type assertion needed for optional field
+    }
+    setSelectedTasks(new Set());
   };
 
   // When a view is selected, apply its settings
@@ -321,10 +385,83 @@ export default function TaskList() {
         </div>
       </div>
 
-      {/* Task Count */}
-      <div className="text-sm text-gray-600" aria-live="polite" aria-atomic="true">
-        Showing {displayedTasks.length} task{displayedTasks.length !== 1 ? 's' : ''}
+      {/* Task Count and Selection Mode Toggle */}
+      <div className="flex items-center justify-between" aria-live="polite" aria-atomic="true">
+        <div className="text-sm text-gray-600">
+          Showing {displayedTasks.length} task{displayedTasks.length !== 1 ? 's' : ''}
+          {selectionMode && selectedTasks.size > 0 && (
+            <span className="ml-2 text-blue-600 font-medium">
+              ({selectedTasks.size} selected)
+            </span>
+          )}
+        </div>
+        {displayedTasks.length > 0 && (
+          <button
+            onClick={toggleSelectionMode}
+            className={`px-3 py-1 text-xs rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              selectionMode
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {selectionMode ? 'Exit Selection' : 'Select Tasks'}
+          </button>
+        )}
       </div>
+
+      {/* Bulk Actions Bar */}
+      {showBulkActions && selectionMode && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={selectAll}
+                className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Select All
+              </button>
+              <button
+                onClick={deselectAll}
+                className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Deselect All
+              </button>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <select
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleBulkMoveToProject(e.target.value);
+                    e.target.value = '';
+                  }
+                }}
+                className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                defaultValue=""
+              >
+                <option value="" disabled>Move to...</option>
+                <option value="none">No Project</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleBulkComplete}
+                className="text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                Mark Complete
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="text-xs px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Task List or Empty State */}
       {displayedTasks.length === 0 ? (
@@ -341,7 +478,20 @@ export default function TaskList() {
       ) : (
         <div className="space-y-2">
           {displayedTasks.map((task) => (
-            <TaskItem key={task.id} task={task} />
+            <div key={task.id} className="flex items-start gap-2">
+              {selectionMode && (
+                <input
+                  type="checkbox"
+                  checked={selectedTasks.has(task.id)}
+                  onChange={() => toggleTaskSelection(task.id)}
+                  className="mt-3 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                  aria-label={`Select task: ${task.title}`}
+                />
+              )}
+              <div className="flex-1 min-w-0">
+                <TaskItem task={task} />
+              </div>
+            </div>
           ))}
         </div>
       )}
