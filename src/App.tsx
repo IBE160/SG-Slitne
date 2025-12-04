@@ -110,6 +110,18 @@ function App() {
 
   useEffect(() => {
     initializeTasks();
+    
+    // Timeout fallback - if initialization takes too long, mark as initialized anyway
+    const timeoutId = setTimeout(() => {
+      if (!useTaskStore.getState().initialized) {
+        console.warn('Database initialization timeout - using fallback');
+        useTaskStore.getState().initializeTasks().catch(err => {
+          console.error('Failed to initialize database:', err);
+        });
+      }
+    }, 3000); // 3 second timeout
+    
+    return () => clearTimeout(timeoutId);
   }, [initializeTasks]);
 
   useEffect(() => {
@@ -124,7 +136,32 @@ function App() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading tasks...</p>
+          <p className="text-xs text-gray-500 mt-2">This may take a moment on first load</p>
         </div>
+      </div>
+    );
+  }
+
+  // If not initialized after loading, show empty state
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10" role="banner">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">Smart To-Do List</h1>
+                <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">Sprint 1 - MVP</p>
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+          <div className="text-center py-12">
+            <p className="text-gray-600 mb-2">Ready to get started!</p>
+            <p className="text-sm text-gray-500">Your tasks will be stored locally on your device</p>
+          </div>
+        </main>
       </div>
     );
   }
