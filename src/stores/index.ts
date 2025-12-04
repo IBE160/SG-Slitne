@@ -7,6 +7,8 @@ import type { Task, Label, Project } from '../services/db';
 import { taskService } from '../services/task-service';
 import { isOffline, enqueueCreate, enqueueUpdate, enqueueDelete } from '../services/offline';
 import { trackEvent } from '../services/telemetry';
+import type { TaskView } from '../services/views';
+import { getViews, saveView as saveViewService, updateView as updateViewService, deleteView as deleteViewService, initializePresetViews } from '../services/views';
 
 // ===== TASK STORE =====
 
@@ -18,6 +20,9 @@ interface TaskStore {
   aiAnalysisEnabled: boolean;
   cloudModeEnabled: boolean;
   telemetryEnabled: boolean;
+  // Views
+  savedViews: TaskView[];
+  currentViewId: string | null;
   initializeTasks: () => Promise<void>;
   addTask: (task: Task) => Promise<void>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
@@ -30,6 +35,12 @@ interface TaskStore {
   setAIAnalysisEnabled: (enabled: boolean) => void;
   setCloudModeEnabled: (enabled: boolean) => void;
   setTelemetryEnabled: (enabled: boolean) => void;
+  // Views methods
+  loadSavedViews: () => void;
+  saveNewView: (name: string, sortBy: 'priority' | 'dueDate' | 'created', filterPriority: 'all' | '1' | '2' | '3', searchQuery?: string) => TaskView;
+  setCurrentView: (viewId: string | null) => void;
+  deleteViewById: (viewId: string) => void;
+  updateViewById: (viewId: string, updates: Partial<Omit<TaskView, 'id' | 'createdAt' | 'isPreset'>>) => TaskView;
 }
 
 export const useTaskStore = create<TaskStore>()(
@@ -40,6 +51,8 @@ export const useTaskStore = create<TaskStore>()(
     aiAnalysisEnabled: true,
     cloudModeEnabled: false,
     telemetryEnabled: false,
+    savedViews: [],
+    currentViewId: null,
 
     initializeTasks: async () => {
       if (get().initialized) return;
@@ -137,6 +150,36 @@ export const useTaskStore = create<TaskStore>()(
 
     setTelemetryEnabled: (enabled: boolean) => {
       set({ telemetryEnabled: enabled });
+    },
+
+    loadSavedViews: () => {
+      initializePresetViews();
+      const views = getViews();
+      set({ savedViews: views });
+    },
+
+    saveNewView: (name: string, sortBy: 'priority' | 'dueDate' | 'created', filterPriority: 'all' | '1' | '2' | '3', searchQuery?: string) => {
+      const view = saveViewService(name, sortBy, filterPriority, searchQuery);
+      const views = getViews();
+      set({ savedViews: views });
+      return view;
+    },
+
+    setCurrentView: (viewId: string | null) => {
+      set({ currentViewId: viewId });
+    },
+
+    deleteViewById: (viewId: string) => {
+      deleteViewService(viewId);
+      const views = getViews();
+      set({ savedViews: views, currentViewId: null });
+    },
+
+    updateViewById: (viewId: string, updates: Partial<Omit<TaskView, 'id' | 'createdAt' | 'isPreset'>>) => {
+      const view = updateViewService(viewId, updates);
+      const views = getViews();
+      set({ savedViews: views });
+      return view;
     },
   }))
 );

@@ -49,6 +49,12 @@ function App() {
     initializeTasks();
   }, [initializeTasks]);
 
+  useEffect(() => {
+    // Initialize preset views
+    const loadSavedViews = useTaskStore.getState().loadSavedViews;
+    loadSavedViews();
+  }, []);
+
   if (!initialized && loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

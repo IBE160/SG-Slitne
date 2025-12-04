@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTaskStore } from '../stores';
 import TaskItem from './TaskItem';
 import type { Task } from '../services/db';
@@ -8,9 +8,27 @@ type FilterOption = 'all' | '1' | '2' | '3';
 
 export default function TaskList() {
   const tasks = useTaskStore((state) => state.tasks);
+  const savedViews = useTaskStore((state) => state.savedViews);
+  const currentViewId = useTaskStore((state) => state.currentViewId);
+  const setCurrentView = useTaskStore((state) => state.setCurrentView);
+  
   const [sortBy, setSortBy] = useState<SortOption>('priority');
   const [filterPriority, setFilterPriority] = useState<FilterOption>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showViewManager, setShowViewManager] = useState(false);
+  const [saveViewName, setSaveViewName] = useState('');
+
+  // When a view is selected, apply its settings
+  useEffect(() => {
+    if (currentViewId) {
+      const view = savedViews.find(v => v.id === currentViewId);
+      if (view) {
+        setSortBy(view.sortBy);
+        setFilterPriority(view.filterPriority);
+        setSearchQuery(view.searchQuery || '');
+      }
+    }
+  }, [currentViewId, savedViews]);
 
   // Filter and sort tasks
   const displayedTasks = useMemo(() => {
@@ -93,6 +111,94 @@ export default function TaskList() {
 
   return (
     <div className="space-y-4">
+      {/* View Selector */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-blue-900">Quick Views:</label>
+          <button
+            onClick={() => setShowViewManager(!showViewManager)}
+            className="text-xs px-2 py-1 rounded bg-blue-200 text-blue-800 hover:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Manage views"
+          >
+            {showViewManager ? 'Hide' : 'Manage'}
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {savedViews.length > 0 ? (
+            savedViews.map((view) => (
+              <button
+                key={view.id}
+                onClick={() => setCurrentView(view.id)}
+                aria-pressed={currentViewId === view.id}
+                className={`px-3 py-1 text-xs rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 ${
+                  currentViewId === view.id
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white border border-blue-300 text-blue-700 hover:bg-blue-50'
+                }`}
+              >
+                {view.name}
+              </button>
+            ))
+          ) : (
+            <span className="text-xs text-blue-600">No views available</span>
+          )}
+        </div>
+
+        {showViewManager && (
+          <div className="mt-3 pt-3 border-t border-blue-200 space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="View name (e.g., 'My Priority')"
+                value={saveViewName}
+                onChange={(e) => setSaveViewName(e.target.value)}
+                className="flex-1 px-2 py-1 text-xs border border-blue-300 rounded focus:ring-2 focus:ring-blue-500"
+                aria-label="New view name"
+              />
+              <button
+                onClick={() => {
+                  if (saveViewName.trim()) {
+                    try {
+                      useTaskStore.getState().saveNewView(saveViewName, sortBy, filterPriority, searchQuery);
+                      setSaveViewName('');
+                    } catch (error) {
+                      alert(`Error: ${error instanceof Error ? error.message : 'Failed to save view'}`);
+                    }
+                  }
+                }}
+                className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                disabled={!saveViewName.trim()}
+                aria-label="Save current view"
+              >
+                Save View
+              </button>
+            </div>
+            {/* Custom views list with delete option */}
+            <div className="space-y-1 max-h-32 overflow-y-auto">
+              {savedViews.filter(v => !v.isPreset).map((view) => (
+                <div key={view.id} className="flex items-center justify-between gap-2 p-1 bg-white rounded border border-blue-100 text-xs">
+                  <span className="text-blue-700 truncate">{view.name}</span>
+                  <button
+                    onClick={() => {
+                      if (confirm(`Delete view "${view.name}"?`)) {
+                        useTaskStore.getState().deleteViewById(view.id);
+                        if (currentViewId === view.id) {
+                          setCurrentView(null);
+                        }
+                      }
+                    }}
+                    className="text-red-600 hover:text-red-800 focus:outline-none text-xs px-1 py-0.5 rounded hover:bg-red-50"
+                    aria-label={`Delete view ${view.name}`}
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Search Bar */}
       <div className="relative">
         <label htmlFor="search-tasks" className="sr-only">Search tasks</label>
