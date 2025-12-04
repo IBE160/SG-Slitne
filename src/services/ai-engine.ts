@@ -1,5 +1,13 @@
 // SPIKE-4: Heuristic AI Engine
 // Purpose: Validate label suggestion, priority scoring, summarization performance
+/**
+ * AI Engine Module - Provides AI-powered task suggestions and analysis
+ * 
+ * Generates intelligent label suggestions, priority scores, and task summaries
+ * based on task content, metadata, and context patterns.
+ * 
+ * @module ai-engine
+ */
 
 import type { Task } from './db';
 
@@ -37,6 +45,20 @@ function containsActionVerbs(text: string): { score: number; why: string[] } {
   return { score: Math.min(0.2, hits.length * 0.05), why: hits.length ? [`Action verbs: ${hits.join(', ')}`] : [] };
 }
 
+/**
+ * Generate intelligent label suggestions for a task
+ * 
+ * Analyzes task title and description to suggest relevant labels with
+ * confidence scores. Considers urgency keywords, time cues, and action verbs.
+ * 
+ * @param {string} title - Task title to analyze
+ * @param {string} description - Task description for additional context
+ * @param {number} priority - Priority level (1=Low, 2=Medium, 3=High)
+ * @returns {LabelSuggestion[]} Array of top 3 suggested labels with confidence
+ * @example
+ * const suggestions = suggestLabels('Buy milk for breakfast', 'Need organic', 1);
+ * // [{label: 'shopping', confidence: 0.95, reason: 'Keywords: buy, shop...'}]
+ */
 export function suggestLabels(title: string, description: string, priority: number): LabelSuggestion[] {
   const text = `${title} ${description}`.toLowerCase();
   const suggestions: LabelSuggestion[] = [];
@@ -73,6 +95,20 @@ export interface PriorityScore {
   factors: Record<string, number>;
 }
 
+/**
+ * Calculate an AI-suggested priority score for a task
+ * 
+ * Uses task title, due date, and description to intelligently suggest
+ * whether a task should be high, medium, or low priority.
+ * 
+ * @param {string} title - Task title to analyze
+ * @param {string|undefined} dueDate - ISO date string for due date (if any)
+ * @param {string} description - Task description for additional context
+ * @returns {PriorityScore} Priority score (1-3), reasoning, and contributing factors
+ * @example
+ * const result = scorePriority('URGENT: Fix critical bug', '2025-12-05', 'Production issue');
+ * // { score: 3, reasoning: 'Urgent language + imminent due date', factors: {...} }
+ */
 export function scorePriority(
   title: string,
   dueDate: string | undefined,

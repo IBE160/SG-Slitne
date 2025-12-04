@@ -1,5 +1,14 @@
 // SPIKE-5: Offline-First & Persistence Handler
 // Purpose: Validate offline functionality, sync queue, data recovery
+/**
+ * Offline Service Module - Manages offline mode and background sync queue
+ * 
+ * Handles offline detection, sync queue management, and automatic retry logic
+ * for tasks created/updated while offline. Provides exponential backoff with
+ * jitter for retry attempts.
+ * 
+ * @module offline
+ */
 
 import { getAllTasks, getAllLabels, createTask, Task, Label } from './db';
 
@@ -54,6 +63,12 @@ function shouldRetryItem(item: SyncQueueItem): boolean {
 
 // ===== OFFLINE STATE =====
 
+/**
+ * Check if the application is currently offline
+ * Uses browser's navigator.onLine property
+ * 
+ * @returns {boolean} True if offline, false if online
+ */
 export function isOffline(): boolean {
   return !navigator.onLine;
 }
@@ -69,9 +84,25 @@ export function getOfflineMode(): boolean {
 
 // ===== SYNC QUEUE MANAGEMENT =====
 
+/**
+ * Get the current sync queue for offline changes
+ * Returns all pending sync operations stored in localStorage
+ * 
+ * @returns {SyncQueueItem[]} Array of pending sync operations
+ */
 export function getSyncQueue(): SyncQueueItem[] {
   const stored = localStorage.getItem(SYNC_QUEUE_KEY);
   return stored ? JSON.parse(stored) : [];
+}
+
+/**
+ * Get the count of pending sync items
+ * Useful for displaying sync status to the user
+ * 
+ * @returns {number} Number of pending sync items
+ */
+export function getPendingSyncCount(): number {
+  return getSyncQueue().filter(item => item.status === 'pending').length;
 }
 
 export function setSyncQueue(queue: SyncQueueItem[]): void {
