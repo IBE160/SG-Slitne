@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTaskStore } from '../stores';
 import TaskItem from './TaskItem';
-import type { Task } from '../services/db';
+import type { Task, Project } from '../services/db';
+import { getAllProjects } from '../services/db';
 
 type SortOption = 'priority' | 'dueDate' | 'created';
 type FilterOption = 'all' | '1' | '2' | '3';
@@ -14,9 +15,21 @@ export default function TaskList() {
   
   const [sortBy, setSortBy] = useState<SortOption>('priority');
   const [filterPriority, setFilterPriority] = useState<FilterOption>('all');
+  const [filterProject, setFilterProject] = useState<string>('all');
+  const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showViewManager, setShowViewManager] = useState(false);
   const [saveViewName, setSaveViewName] = useState('');
+
+  // Load projects
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const loadProjects = async () => {
+    const allProjects = await getAllProjects();
+    setProjects(allProjects.filter(p => p.status === 'active'));
+  };
 
   // When a view is selected, apply its settings
   useEffect(() => {
@@ -25,6 +38,7 @@ export default function TaskList() {
       if (view) {
         setSortBy(view.sortBy);
         setFilterPriority(view.filterPriority);
+        setFilterProject(view.filterProject || 'all');
         setSearchQuery(view.searchQuery || '');
       }
     }
@@ -51,6 +65,17 @@ export default function TaskList() {
       filtered = filtered.filter((task) => task.priority === priority);
     }
 
+    // Filter by project
+    if (filterProject !== 'all') {
+      if (filterProject === 'none') {
+        // Show tasks without a project
+        filtered = filtered.filter((task) => !task.projectId);
+      } else {
+        // Show tasks from specific project
+        filtered = filtered.filter((task) => task.projectId === filterProject);
+      }
+    }
+
     // Sort tasks
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === 'priority') {
@@ -66,7 +91,7 @@ export default function TaskList() {
     });
 
     return sorted;
-  }, [tasks, sortBy, filterPriority, searchQuery]);
+  }, [tasks, sortBy, filterPriority, filterProject, searchQuery]);
 
   if (displayedTasks.length === 0) {
     return (
@@ -100,7 +125,7 @@ export default function TaskList() {
           <p className="text-sm">
             {searchQuery.trim()
               ? 'No tasks match your search'
-              : filterPriority !== 'all'
+              : filterPriority !== 'all' || filterProject !== 'all'
               ? 'Try adjusting your filters'
               : 'Add your first task to get started!'}
           </p>
@@ -159,7 +184,7 @@ export default function TaskList() {
                 onClick={() => {
                   if (saveViewName.trim()) {
                     try {
-                      useTaskStore.getState().saveNewView(saveViewName, sortBy, filterPriority, searchQuery);
+                      useTaskStore.getState().saveNewView(saveViewName, sortBy, filterPriority, filterProject, searchQuery);
                       setSaveViewName('');
                     } catch (error) {
                       alert(`Error: ${error instanceof Error ? error.message : 'Failed to save view'}`);
@@ -239,24 +264,49 @@ export default function TaskList() {
       </div>
 
       {/* Sort and Filter Controls */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between bg-gray-50 p-3 sm:p-4 rounded-lg">
-        <div className="flex items-center gap-2">
-          <label htmlFor="sortBy" className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">
-            Sort by:
-          </label>
-          <select
-            id="sortBy"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortOption)}
-            aria-label="Sort tasks by"
-            className="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="priority">Priority</option>
-            <option value="dueDate">Due Date</option>
-            <option value="created">Created</option>
-          </select>
+      <div className="flex flex-col gap-3 bg-gray-50 p-3 sm:p-4 rounded-lg">
+        {/* Sort and Project Filter Row */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <label htmlFor="sortBy" className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">
+              Sort by:
+            </label>
+            <select
+              id="sortBy"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              aria-label="Sort tasks by"
+              className="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="priority">Priority</option>
+              <option value="dueDate">Due Date</option>
+              <option value="created">Created</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="filterProject" className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">
+              Project:
+            </label>
+            <select
+              id="filterProject"
+              value={filterProject}
+              onChange={(e) => setFilterProject(e.target.value)}
+              aria-label="Filter by project"
+              className="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Projects</option>
+              <option value="none">No Project</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
+        {/* Priority Filter Row */}
         <div className="flex items-center gap-2">
           <label className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">Filter by priority:</label>
           <div className="flex gap-1 flex-wrap">

@@ -37,7 +37,7 @@ interface TaskStore {
   setTelemetryEnabled: (enabled: boolean) => void;
   // Views methods
   loadSavedViews: () => void;
-  saveNewView: (name: string, sortBy: 'priority' | 'dueDate' | 'created', filterPriority: 'all' | '1' | '2' | '3', searchQuery?: string) => TaskView;
+  saveNewView: (name: string, sortBy: 'priority' | 'dueDate' | 'created', filterPriority: 'all' | '1' | '2' | '3', filterProject?: string, searchQuery?: string) => TaskView;
   setCurrentView: (viewId: string | null) => void;
   deleteViewById: (viewId: string) => void;
   updateViewById: (viewId: string, updates: Partial<Omit<TaskView, 'id' | 'createdAt' | 'isPreset'>>) => TaskView;
@@ -158,8 +158,8 @@ export const useTaskStore = create<TaskStore>()(
       set({ savedViews: views });
     },
 
-    saveNewView: (name: string, sortBy: 'priority' | 'dueDate' | 'created', filterPriority: 'all' | '1' | '2' | '3', searchQuery?: string) => {
-      const view = saveViewService(name, sortBy, filterPriority, searchQuery);
+    saveNewView: (name: string, sortBy: 'priority' | 'dueDate' | 'created', filterPriority: 'all' | '1' | '2' | '3', filterProject?: string, searchQuery?: string) => {
+      const view = saveViewService(name, sortBy, filterPriority, filterProject, searchQuery);
       const views = getViews();
       set({ savedViews: views });
       return view;

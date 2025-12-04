@@ -11,6 +11,7 @@ export interface TaskView {
   name: string;
   sortBy: 'priority' | 'dueDate' | 'created';
   filterPriority: 'all' | '1' | '2' | '3';
+  filterProject?: string; // 'all' or project ID
   searchQuery?: string;
   isPreset?: boolean;
   createdAt: string;
@@ -42,7 +43,7 @@ export function getViewById(id: string): TaskView | undefined {
 /**
  * Save a new view
  */
-export function saveView(name: string, sortBy: 'priority' | 'dueDate' | 'created', filterPriority: 'all' | '1' | '2' | '3', searchQuery?: string): TaskView {
+export function saveView(name: string, sortBy: 'priority' | 'dueDate' | 'created', filterPriority: 'all' | '1' | '2' | '3', filterProject?: string, searchQuery?: string): TaskView {
   const views = getViews();
   
   // Check for duplicate name
@@ -59,6 +60,7 @@ export function saveView(name: string, sortBy: 'priority' | 'dueDate' | 'created
     name,
     sortBy,
     filterPriority,
+    filterProject: filterProject || 'all',
     searchQuery: searchQuery || undefined,
     isPreset: false,
     createdAt: new Date().toISOString(),
@@ -133,6 +135,7 @@ export function initializePresetViews(): void {
       name: "Today's High Priority",
       sortBy: 'priority',
       filterPriority: '3',
+      filterProject: 'all',
       isPreset: true,
       createdAt: new Date().toISOString(),
     },
@@ -141,6 +144,7 @@ export function initializePresetViews(): void {
       name: 'This Week',
       sortBy: 'dueDate',
       filterPriority: 'all',
+      filterProject: 'all',
       isPreset: true,
       createdAt: new Date().toISOString(),
     },
@@ -149,6 +153,7 @@ export function initializePresetViews(): void {
       name: 'Overdue Only',
       sortBy: 'dueDate',
       filterPriority: 'all',
+      filterProject: 'all',
       isPreset: true,
       createdAt: new Date().toISOString(),
     },
@@ -157,6 +162,7 @@ export function initializePresetViews(): void {
       name: 'All Active',
       sortBy: 'priority',
       filterPriority: 'all',
+      filterProject: 'all',
       isPreset: true,
       createdAt: new Date().toISOString(),
     },
