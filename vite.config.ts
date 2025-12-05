@@ -11,8 +11,8 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
-    minify: false,
-    sourcemap: true,
+    minify: 'esbuild',
+    sourcemap: false,
     reportCompressedSize: true,
     rollupOptions: {
       output: {
