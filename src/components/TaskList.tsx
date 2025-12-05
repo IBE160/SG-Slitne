@@ -41,6 +41,68 @@ const TaskList = React.memo(function TaskList() {
     setProjects(allProjects.filter(p => p.status === 'active'));
   }, []);
 
+  // When a view is selected, apply its settings
+  useEffect(() => {
+    if (currentViewId) {
+      const view = savedViews.find(v => v.id === currentViewId);
+      if (view) {
+        setSortBy(view.sortBy);
+        setFilterPriority(view.filterPriority);
+        setFilterProject(view.filterProject || 'all');
+        setSearchQuery(view.searchQuery || '');
+      }
+    }
+  }, [currentViewId, savedViews]);
+
+  // Filter and sort tasks - MOVED UP before callbacks that use it
+  const displayedTasks = useMemo(() => {
+    let filtered = tasks.filter((task) => task.status === 'active');
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((task) => {
+        const titleMatch = task.title.toLowerCase().includes(query);
+        const descriptionMatch = task.description.toLowerCase().includes(query);
+        const labelMatch = task.labels.some((label) => label.toLowerCase().includes(query));
+        return titleMatch || descriptionMatch || labelMatch;
+      });
+    }
+
+    // Filter by priority
+    if (filterPriority !== 'all') {
+      const priority = Number(filterPriority) as 1 | 2 | 3;
+      filtered = filtered.filter((task) => task.priority === priority);
+    }
+
+    // Filter by project
+    if (filterProject !== 'all') {
+      if (filterProject === 'none') {
+        // Show tasks without a project
+        filtered = filtered.filter((task) => !task.projectId);
+      } else {
+        // Show tasks from specific project
+        filtered = filtered.filter((task) => task.projectId === filterProject);
+      }
+    }
+
+    // Sort tasks
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === 'priority') {
+        return b.priority - a.priority; // High to low
+      } else if (sortBy === 'dueDate') {
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      } else {
+        // created
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+    });
+
+    return sorted;
+  }, [tasks, sortBy, filterPriority, filterProject, searchQuery]);
+
   const toggleSelectionMode = useCallback(() => {
     setSelectionMode(prev => !prev);
     setSelectedTasks(new Set());
@@ -96,68 +158,6 @@ const TaskList = React.memo(function TaskList() {
     }
     setSelectedTasks(new Set());
   }, [selectedTasks, updateTask]);
-
-  // When a view is selected, apply its settings
-  useEffect(() => {
-    if (currentViewId) {
-      const view = savedViews.find(v => v.id === currentViewId);
-      if (view) {
-        setSortBy(view.sortBy);
-        setFilterPriority(view.filterPriority);
-        setFilterProject(view.filterProject || 'all');
-        setSearchQuery(view.searchQuery || '');
-      }
-    }
-  }, [currentViewId, savedViews]);
-
-  // Filter and sort tasks
-  const displayedTasks = useMemo(() => {
-    let filtered = tasks.filter((task) => task.status === 'active');
-
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((task) => {
-        const titleMatch = task.title.toLowerCase().includes(query);
-        const descriptionMatch = task.description.toLowerCase().includes(query);
-        const labelMatch = task.labels.some((label) => label.toLowerCase().includes(query));
-        return titleMatch || descriptionMatch || labelMatch;
-      });
-    }
-
-    // Filter by priority
-    if (filterPriority !== 'all') {
-      const priority = Number(filterPriority) as 1 | 2 | 3;
-      filtered = filtered.filter((task) => task.priority === priority);
-    }
-
-    // Filter by project
-    if (filterProject !== 'all') {
-      if (filterProject === 'none') {
-        // Show tasks without a project
-        filtered = filtered.filter((task) => !task.projectId);
-      } else {
-        // Show tasks from specific project
-        filtered = filtered.filter((task) => task.projectId === filterProject);
-      }
-    }
-
-    // Sort tasks
-    const sorted = [...filtered].sort((a, b) => {
-      if (sortBy === 'priority') {
-        return b.priority - a.priority; // High to low
-      } else if (sortBy === 'dueDate') {
-        if (!a.dueDate) return 1;
-        if (!b.dueDate) return -1;
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-      } else {
-        // created
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-    });
-
-    return sorted;
-  }, [tasks, sortBy, filterPriority, filterProject, searchQuery]);
 
   return (
     <div className="space-y-4">
