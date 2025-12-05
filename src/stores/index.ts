@@ -1,9 +1,12 @@
 // SPIKE-3: Zustand Store Implementation
 // Purpose: Validate state management, persistence, derived state
 
-import { create } from 'zustand';
+import create from 'zustand';
 import type { Task, Label, Project } from '../services/db';
+import { taskService } from '../services/task-service';
+import { isOffline, enqueueCreate, enqueueUpdate, enqueueDelete } from '../services/offline';
 import type { TaskView } from '../services/views';
+import { getViews, saveView as saveViewService, updateView as updateViewService, deleteView as deleteViewService, initializePresetViews } from '../services/views';
 
 // ===== TASK STORE =====
 
@@ -31,11 +34,11 @@ interface TaskStore {
   setCloudModeEnabled: (enabled: boolean) => void;
   setTelemetryEnabled: (enabled: boolean) => void;
   // Views methods
-  loadSavedViews: () => Promise<void>;
-  saveNewView: (name: string, sortBy: 'priority' | 'dueDate' | 'created', filterPriority: 'all' | '1' | '2' | '3', filterProject?: string, searchQuery?: string) => Promise<TaskView>;
+  loadSavedViews: () => void;
+  saveNewView: (name: string, sortBy: 'priority' | 'dueDate' | 'created', filterPriority: 'all' | '1' | '2' | '3', filterProject?: string, searchQuery?: string) => TaskView;
   setCurrentView: (viewId: string | null) => void;
-  deleteViewById: (viewId: string) => Promise<void>;
-  updateViewById: (viewId: string, updates: Partial<Omit<TaskView, 'id' | 'createdAt' | 'isPreset'>>) => Promise<TaskView>;
+  deleteViewById: (viewId: string) => void;
+  updateViewById: (viewId: string, updates: Partial<Omit<TaskView, 'id' | 'createdAt' | 'isPreset'>>) => TaskView;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -53,7 +56,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       
       set({ loading: true });
       try {
-        const { taskService } = await import('../services/task-service');
         const tasks = await taskService.initialize();
         set({ tasks, initialized: true, loading: false });
       } catch (error) {
@@ -64,8 +66,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     addTask: async (task: Task) => {
       try {
-        const { isOffline, enqueueCreate } = await import('../services/offline');
-        const { taskService } = await import('../services/task-service');
         // Enqueue for cloud sync if offline
         if (isOffline()) {
           enqueueCreate('task', task.id, task as unknown as Record<string, unknown>);
@@ -82,8 +82,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     updateTask: async (id: string, updates: Partial<Task>) => {
       try {
-        const { isOffline, enqueueUpdate } = await import('../services/offline');
-        const { taskService } = await import('../services/task-service');
         // Enqueue for cloud sync if offline
         if (isOffline()) {
           enqueueUpdate('task', id, updates as unknown as Record<string, unknown>);
@@ -102,8 +100,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     deleteTask: async (id: string) => {
       try {
-        const { isOffline, enqueueDelete } = await import('../services/offline');
-        const { taskService } = await import('../services/task-service');
         // Enqueue for cloud sync if offline
         if (isOffline()) {
           enqueueDelete('task', id);
@@ -153,16 +149,14 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ telemetryEnabled: enabled });
     },
 
-    loadSavedViews: async () => {
-      const { initializePresetViews, getViews } = await import('../services/views');
+    loadSavedViews: () => {
       initializePresetViews();
       const views = getViews();
       set({ savedViews: views });
     },
 
-    saveNewView: async (name: string, sortBy: 'priority' | 'dueDate' | 'created', filterPriority: 'all' | '1' | '2' | '3', filterProject?: string, searchQuery?: string) => {
-      const { saveView, getViews } = await import('../services/views');
-      const view = saveView(name, sortBy, filterPriority, filterProject, searchQuery);
+    saveNewView: (name: string, sortBy: 'priority' | 'dueDate' | 'created', filterPriority: 'all' | '1' | '2' | '3', filterProject?: string, searchQuery?: string) => {
+      const view = saveViewService(name, sortBy, filterPriority, filterProject, searchQuery);
       const views = getViews();
       set({ savedViews: views });
       return view;
@@ -172,16 +166,14 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ currentViewId: viewId });
     },
 
-    deleteViewById: async (viewId: string) => {
-      const { deleteView, getViews } = await import('../services/views');
-      deleteView(viewId);
+    deleteViewById: (viewId: string) => {
+      deleteViewService(viewId);
       const views = getViews();
       set({ savedViews: views, currentViewId: null });
     },
 
-    updateViewById: async (viewId: string, updates: Partial<Omit<TaskView, 'id' | 'createdAt' | 'isPreset'>>) => {
-      const { updateView, getViews } = await import('../services/views');
-      const view = updateView(viewId, updates);
+    updateViewById: (viewId: string, updates: Partial<Omit<TaskView, 'id' | 'createdAt' | 'isPreset'>>) => {
+      const view = updateViewService(viewId, updates);
       const views = getViews();
       set({ savedViews: views });
       return view;
