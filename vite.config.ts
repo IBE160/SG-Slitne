@@ -10,10 +10,16 @@ export default defineConfig({
     middlewareMode: false,
   },
   build: {
-    target: 'ES2020',
-    minify: 'terser',
-    sourcemap: false,
+    target: 'esnext',
+    minify: false,
+    sourcemap: true,
     reportCompressedSize: true,
+    rollupOptions: {
+      output: {
+        format: 'iife',
+        manualChunks: undefined,
+      },
+    },
   },
   define: {
     __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
