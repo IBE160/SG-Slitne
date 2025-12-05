@@ -2,7 +2,6 @@
 // Purpose: Validate state management, persistence, derived state
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { Task, Label, Project } from '../services/db';
 import { taskService } from '../services/task-service';
 import { isOffline, enqueueCreate, enqueueUpdate, enqueueDelete } from '../services/offline';
@@ -195,10 +194,8 @@ interface LabelStore {
   getLabelCount: () => number;
 }
 
-export const useLabelStore = create<LabelStore>(
-  persist(
-    (set, get) => ({
-      labels: [],
+export const useLabelStore = create<LabelStore>((set, get) => ({
+  labels: [],
 
       addLabel: (label: Label) => {
         set((state) => ({
@@ -228,16 +225,10 @@ export const useLabelStore = create<LabelStore>(
         return get().labels.find((label) => label.id === id);
       },
 
-      getLabelCount: () => {
-        return get().labels.length;
-      },
-    }),
-    {
-      name: 'label-store',
-      partialize: (state) => ({ labels: state.labels }),
-    }
-  )
-);
+  getLabelCount: () => {
+    return get().labels.length;
+  },
+}));
 
 // ===== UI STORE =====
 
@@ -254,10 +245,8 @@ interface UIStore {
   setFilterStatus: (status: 'all' | 'active' | 'completed' | 'archived') => void;
 }
 
-export const useUIStore = create<UIStore>(
-  persist(
-    (set) => ({
-      sidebarOpen: true,
+export const useUIStore = create<UIStore>((set) => ({
+  sidebarOpen: true,
       selectedTaskId: null,
       selectedLabelId: null,
       sortBy: 'dueDate',
@@ -281,12 +270,7 @@ export const useUIStore = create<UIStore>(
         set({ sortBy: sort });
       },
 
-      setFilterStatus: (status) => {
-        set({ filterStatus: status });
-      },
-    }),
-    {
-      name: 'ui-store',
-    }
-  )
-);
+  setFilterStatus: (status) => {
+    set({ filterStatus: status });
+  },
+}));
